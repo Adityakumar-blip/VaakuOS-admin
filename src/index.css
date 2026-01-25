@@ -1,0 +1,680 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 
+  ADMIN PANEL DESIGN SYSTEM
+  Brand-aware theming with dynamic color palette support
+  All colors in HSL format
+*/
+
+@layer base {
+  :root {
+    /* Brand Palettes - These get swapped at runtime */
+    --brand-primary: 152 39% 27%;
+    --brand-primary-fg: 0 0% 100%;
+    --brand-primary-hover: 152 39% 22%;
+    --brand-primary-muted: 152 39% 95%;
+
+    /* Map brand to UI tokens */
+    --primary: var(--brand-primary);
+    --primary-foreground: var(--brand-primary-fg);
+    --primary-hover: var(--brand-primary-hover);
+
+    /* Core palette */
+    --background: 0 0% 100%;
+    --foreground: 222 47% 11%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222 47% 11%;
+
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
+
+    --accent: 210 40% 96%;
+    --accent-foreground: 222 47% 11%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: var(--brand-primary);
+
+    --radius: 0.5rem;
+
+    /* Sidebar */
+    --sidebar-background: 220 14% 96%;
+    --sidebar-foreground: 222 47% 11%;
+    --sidebar-primary: var(--brand-primary);
+    --sidebar-primary-foreground: var(--brand-primary-fg);
+    --sidebar-accent: 220 14% 92%;
+    --sidebar-accent-foreground: 222 47% 11%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: var(--brand-primary);
+    --sidebar-muted: 215 16% 47%;
+
+    /* Shadows */
+    --shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.05);
+    --shadow-md: 0 4px 6px -1px hsl(0 0% 0% / 0.1), 0 2px 4px -2px hsl(0 0% 0% / 0.1);
+    --shadow-lg: 0 10px 15px -3px hsl(0 0% 0% / 0.1), 0 4px 6px -4px hsl(0 0% 0% / 0.1);
+    --shadow-xl: 0 20px 25px -5px hsl(0 0% 0% / 0.1), 0 8px 10px -6px hsl(0 0% 0% / 0.1);
+
+    /* Charts */
+    --chart-1: var(--brand-primary);
+    --chart-2: 217 90% 56%;
+    --chart-3: 262 83% 58%;
+    --chart-4: 25 95% 53%;
+    --chart-5: 0 84% 60%;
+
+    /* Success/Warning/Info */
+    --success: 152 69% 31%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+    --info: 217 90% 56%;
+    --info-foreground: 0 0% 100%;
+  }
+
+  .dark {
+    --brand-primary-muted: 152 39% 15%;
+
+    --background: 222 47% 6%;
+    --foreground: 210 40% 98%;
+
+    --card: 222 47% 8%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222 47% 8%;
+    --popover-foreground: 210 40% 98%;
+
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
+
+    --accent: 217 33% 17%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217 33% 17%;
+    --input: 217 33% 17%;
+    --ring: var(--brand-primary);
+
+    --sidebar-background: 222 47% 5%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-accent: 217 33% 12%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 217 33% 12%;
+    --sidebar-muted: 215 20% 65%;
+
+    --shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.3);
+    --shadow-md: 0 4px 6px -1px hsl(0 0% 0% / 0.4), 0 2px 4px -2px hsl(0 0% 0% / 0.3);
+    --shadow-lg: 0 10px 15px -3px hsl(0 0% 0% / 0.4), 0 4px 6px -4px hsl(0 0% 0% / 0.3);
+    --shadow-xl: 0 20px 25px -5px hsl(0 0% 0% / 0.4), 0 8px 10px -6px hsl(0 0% 0% / 0.3);
+  }
+
+  /* Color Palette Presets */
+  [data-palette="green"] {
+    --brand-primary: 152 39% 27%;
+    --brand-primary-fg: 0 0% 100%;
+    --brand-primary-hover: 152 39% 22%;
+    --brand-primary-muted: 152 39% 95%;
+  }
+
+  .dark[data-palette="green"] {
+    --brand-primary-muted: 152 39% 15%;
+  }
+
+  [data-palette="blue"] {
+    --brand-primary: 217 90% 56%;
+    --brand-primary-fg: 0 0% 100%;
+    --brand-primary-hover: 217 90% 46%;
+    --brand-primary-muted: 217 90% 95%;
+  }
+
+  .dark[data-palette="blue"] {
+    --brand-primary-muted: 217 90% 15%;
+  }
+
+  [data-palette="violet"] {
+    --brand-primary: 262 83% 58%;
+    --brand-primary-fg: 0 0% 100%;
+    --brand-primary-hover: 262 83% 48%;
+    --brand-primary-muted: 262 83% 95%;
+  }
+
+  .dark[data-palette="violet"] {
+    --brand-primary-muted: 262 83% 15%;
+  }
+
+  [data-palette="orange"] {
+    --brand-primary: 25 95% 53%;
+    --brand-primary-fg: 0 0% 100%;
+    --brand-primary-hover: 25 95% 43%;
+    --brand-primary-muted: 25 95% 95%;
+  }
+
+  .dark[data-palette="orange"] {
+    --brand-primary-muted: 25 95% 15%;
+  }
+
+  [data-palette="red"] {
+    --brand-primary: 0 84% 60%;
+    --brand-primary-fg: 0 0% 100%;
+    --brand-primary-hover: 0 84% 50%;
+    --brand-primary-muted: 0 84% 95%;
+  }
+
+  .dark[data-palette="red"] {
+    --brand-primary-muted: 0 84% 15%;
+  }
+
+  [data-palette="slate"] {
+    --brand-primary: 215 16% 47%;
+    --brand-primary-fg: 0 0% 100%;
+    --brand-primary-hover: 215 16% 37%;
+    --brand-primary-muted: 215 16% 95%;
+  }
+
+  .dark[data-palette="slate"] {
+    --brand-primary-muted: 215 16% 15%;
+  }
+
+  /* RTL Support */
+  [dir="rtl"] {
+    direction: rtl;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: "General Sans", system-ui, sans-serif;
+  }
+
+  code,
+  pre,
+  .font-mono {
+    font-family: 'JetBrains Mono', monospace;
+  }
+}
+
+@layer utilities {
+  .shadow-soft {
+    box-shadow: var(--shadow-md);
+  }
+
+  .shadow-glow {
+    box-shadow: 0 0 20px hsl(var(--brand-primary) / 0.3);
+  }
+
+  .animate-fade-in {
+    animation: fade-in 0.15s ease-out;
+  }
+
+  .animate-slide-in {
+    animation: slide-in 0.2s ease-out;
+  }
+
+  .animate-scale-in {
+    animation: scale-in 0.2s ease-out;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.5);
+}
+
+
+/* React Datepicker Overrides */
+.react-datepicker {
+  font-family: inherit !important;
+  background-color: hsl(var(--popover)) !important;
+  border: 1px solid hsl(var(--border)) !important;
+  border-radius: var(--radius) !important;
+  color: hsl(var(--foreground)) !important;
+  box-shadow: var(--shadow-md) !important;
+}
+
+.react-datepicker__header {
+  background-color: hsl(var(--muted)) !important;
+  border-bottom: 1px solid hsl(var(--border)) !important;
+  border-top-left-radius: var(--radius) !important;
+  border-top-right-radius: 0 !important;
+  /* Fix rounding when time is present */
+  padding-top: 0.5rem !important;
+}
+
+.react-datepicker__current-month,
+.react-datepicker-time__header,
+.react-datepicker-year-header {
+  color: hsl(var(--foreground)) !important;
+  font-weight: 600 !important;
+}
+
+.react-datepicker__day-name {
+  color: hsl(var(--muted-foreground)) !important;
+  width: 2rem !important;
+  line-height: 2rem !important;
+  margin: 0.2rem !important;
+}
+
+.react-datepicker__day {
+  color: hsl(var(--foreground)) !important;
+  width: 2rem !important;
+  line-height: 2rem !important;
+  margin: 0.2rem !important;
+  border-radius: var(--radius) !important;
+}
+
+.react-datepicker__day:hover {
+  background-color: hsl(var(--accent)) !important;
+  color: hsl(var(--accent-foreground)) !important;
+}
+
+
+.react-datepicker__day--selected,
+.react-datepicker__day--range-start,
+.react-datepicker__day--range-end,
+.react-datepicker__day--selecting-range-start,
+.react-datepicker__day--selecting-range-end,
+.react-datepicker__day--keyboard-selected {
+  background-color: hsl(var(--primary)) !important;
+  color: hsl(var(--primary-foreground)) !important;
+}
+
+.react-datepicker__day--selected:hover,
+.react-datepicker__day--range-start:hover,
+.react-datepicker__day--range-end:hover,
+.react-datepicker__day--selecting-range-start:hover,
+.react-datepicker__day--selecting-range-end:hover,
+.react-datepicker__day--keyboard-selected:hover {
+  background-color: hsl(var(--primary-hover)) !important;
+  /* Use existing primary-hover or slightly darker */
+  color: hsl(var(--primary-foreground)) !important;
+}
+
+.react-datepicker__day--in-range,
+.react-datepicker__day--in-selecting-range {
+  background-color: hsl(var(--primary) / 0.2) !important;
+  /* Light opacity primary for the range */
+  color: hsl(var(--foreground)) !important;
+}
+
+.react-datepicker__day--in-range:not(.react-datepicker__day--range-start):not(.react-datepicker__day--range-end):hover,
+.react-datepicker__day--in-selecting-range:not(.react-datepicker__day--selecting-range-start):not(.react-datepicker__day--selecting-range-end):hover {
+  background-color: hsl(var(--primary) / 0.3) !important;
+}
+
+
+.react-datepicker__day--disabled {
+  color: hsl(var(--muted-foreground)) !important;
+  opacity: 0.5 !important;
+}
+
+.react-datepicker__day--outside-month {
+  color: hsl(var(--muted-foreground)) !important;
+  opacity: 0.5 !important;
+}
+
+.react-datepicker__input-container input {
+  @apply flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
+  padding-left: 2.5rem !important;
+  /* Force space for icon */
+}
+
+.react-datepicker__triangle {
+  display: none !important;
+}
+
+.react-datepicker__navigation-icon::before {
+  border-color: hsl(var(--muted-foreground)) !important;
+}
+
+/* Time Picker Theme */
+.react-datepicker__time-container {
+  border-left: 1px solid hsl(var(--border)) !important;
+  background-color: hsl(var(--popover)) !important;
+}
+
+.react-datepicker__time-container .react-datepicker__time .react-datepicker__time-box {
+  background-color: hsl(var(--popover)) !important;
+  border-bottom-right-radius: var(--radius) !important;
+}
+
+.react-datepicker__time-list-item {
+  color: hsl(var(--foreground)) !important;
+}
+
+.react-datepicker__time-list-item:hover {
+  background-color: hsl(var(--accent)) !important;
+  color: hsl(var(--accent-foreground)) !important;
+}
+
+
+.react-datepicker__time-list-item--selected {
+  background-color: hsl(var(--primary)) !important;
+  color: hsl(var(--primary-foreground)) !important;
+}
+
+/* Year Picker Theme */
+.react-datepicker__year-text--selected,
+.react-datepicker__year-text--keyboard-selected {
+  background-color: hsl(var(--primary)) !important;
+  color: hsl(var(--primary-foreground)) !important;
+}
+
+.react-datepicker__year-text:hover {
+  background-color: hsl(var(--accent)) !important;
+  color: hsl(var(--accent-foreground)) !important;
+}
+
+/* React Date Range Overrides */
+/* React Date Range Overrides */
+.aura-date-range-wrapper .rdrDateRangeWrapper {
+  width: 100%;
+}
+
+.aura-date-range-wrapper.aura-date-range-sidebar-wrapper .rdrDateRangeWrapper {
+  width: auto;
+  display: flex;
+}
+
+.aura-date-range-wrapper .rdrCalendarWrapper {
+  background-color: transparent !important;
+  color: hsl(var(--foreground)) !important;
+  font-size: 13px;
+}
+
+.aura-date-range-wrapper .rdrMonthAndYearWrapper {
+  padding-top: 0;
+  height: 3rem;
+  align-items: center;
+}
+
+.aura-date-range-wrapper .rdrMonthAndYearPickers select {
+  background: transparent;
+  color: hsl(var(--foreground));
+  font-weight: 600;
+}
+
+.aura-date-range-wrapper .rdrMonthAndYearPickers select:hover {
+  background: hsl(var(--accent));
+  border-radius: var(--radius);
+}
+
+.aura-date-range-wrapper .rdrNextPrevButton {
+  background: transparent !important;
+  border-radius: var(--radius);
+}
+
+.aura-date-range-wrapper .rdrNextPrevButton:hover {
+  background: hsl(var(--accent)) !important;
+}
+
+.aura-date-range-wrapper .rdrNextPrevButton i {
+  border-width: 0 !important;
+  border-color: transparent transparent transparent hsl(var(--foreground)) !important;
+}
+
+.aura-date-range-wrapper .rdrNextPrevButton i.rdrNextButton {
+  border-color: transparent transparent transparent hsl(var(--foreground)) !important;
+}
+
+.aura-date-range-wrapper .rdrNextPrevButton i.rdrPrevButton {
+  border-color: transparent hsl(var(--foreground)) transparent transparent !important;
+}
+
+.aura-date-range-wrapper .rdrMonthName {
+  color: hsl(var(--muted-foreground));
+  font-weight: 500;
+  padding: 0.8rem;
+}
+
+.aura-date-range-wrapper .rdrWeekDays {
+  padding: 0 0.8rem;
+}
+
+.aura-date-range-wrapper .rdrWeekDay {
+  color: hsl(var(--muted-foreground));
+  font-weight: normal;
+}
+
+.aura-date-range-wrapper .rdrDay {
+  background: transparent;
+}
+
+.aura-date-range-wrapper .rdrDayNumber span {
+  color: hsl(var(--foreground));
+  font-weight: 400;
+}
+
+.aura-date-range-wrapper .rdrDayToday .rdrDayNumber span:after {
+  background: hsl(var(--primary)) !important;
+}
+
+.aura-date-range-wrapper .rdrDay:not(.rdrDayPassive) .rdrInRange~.rdrDayNumber span,
+.aura-date-range-wrapper .rdrDay:not(.rdrDayPassive) .rdrStartEdge~.rdrDayNumber span,
+.aura-date-range-wrapper .rdrDay:not(.rdrDayPassive) .rdrEndEdge~.rdrDayNumber span,
+.aura-date-range-wrapper .rdrDay:not(.rdrDayPassive) .rdrSelected~.rdrDayNumber span {
+  color: hsl(var(--primary-foreground)) !important;
+  font-weight: 500;
+}
+
+.aura-date-range-wrapper .rdrDayHovered {
+  border-color: hsl(var(--primary) / 0.5) !important;
+}
+
+.aura-date-range-wrapper .rdrDayPassive .rdrDayNumber span {
+  color: hsl(var(--muted-foreground)) !important;
+  opacity: 0.5;
+}
+
+.aura-date-range-wrapper .rdrStaticRanges button,
+.aura-date-range-wrapper .rdrDefinedRangesWrapper {
+  background: transparent !important;
+  border-right: 1px solid hsl(var(--border));
+}
+
+.aura-date-range-wrapper .rdrStaticRange:hover,
+.aura-date-range-wrapper .rdrStaticRange.rdrStaticRangeSelected {
+  background: hsl(var(--accent)) !important;
+  color: hsl(var(--accent-foreground)) !important;
+}
+
+.aura-date-range-wrapper .rdrStaticRange {
+  background: transparent !important;
+  color: hsl(var(--foreground)) !important;
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+.aura-date-range-wrapper .rdrInputRanges {
+  display: none;
+}
+
+
+.aura-date-range-wrapper .rdrMonthAndYearWrapper {
+  padding-top: 0;
+  height: 3rem;
+  align-items: center;
+}
+
+.aura-date-range-wrapper .rdrMonthAndYearPickers select {
+  background: transparent;
+  color: hsl(var(--foreground));
+  font-weight: 600;
+}
+
+.aura-date-range-wrapper .rdrMonthAndYearPickers select:hover {
+  background: hsl(var(--accent));
+  border-radius: var(--radius);
+}
+
+.aura-date-range-wrapper .rdrNextPrevButton {
+  background: transparent !important;
+  border-radius: var(--radius);
+}
+
+.aura-date-range-wrapper .rdrNextPrevButton:hover {
+  background: hsl(var(--accent)) !important;
+}
+
+.aura-date-range-wrapper .rdrNextPrevButton i {
+  border-width: 0 !important;
+  border-color: transparent transparent transparent hsl(var(--foreground)) !important;
+}
+
+.aura-date-range-wrapper .rdrNextPrevButton i.rdrNextButton {
+  border-color: transparent transparent transparent hsl(var(--foreground)) !important;
+}
+
+.aura-date-range-wrapper .rdrNextPrevButton i.rdrPrevButton {
+  border-color: transparent hsl(var(--foreground)) transparent transparent !important;
+}
+
+.aura-date-range-wrapper .rdrMonthName {
+  color: hsl(var(--muted-foreground));
+  font-weight: 500;
+  padding: 0.8rem;
+}
+
+.aura-date-range-wrapper .rdrWeekDays {
+  padding: 0 0.8rem;
+}
+
+.aura-date-range-wrapper .rdrWeekDay {
+  color: hsl(var(--muted-foreground));
+  font-weight: normal;
+}
+
+.aura-date-range-wrapper .rdrDay {
+  background: transparent;
+}
+
+.aura-date-range-wrapper .rdrDayNumber span {
+  color: hsl(var(--foreground));
+  font-weight: 400;
+}
+
+.aura-date-range-wrapper .rdrDayToday .rdrDayNumber span:after {
+  background: hsl(var(--primary)) !important;
+}
+
+.aura-date-range-wrapper .rdrDay:not(.rdrDayPassive) .rdrInRange~.rdrDayNumber span,
+.aura-date-range-wrapper .rdrDay:not(.rdrDayPassive) .rdrStartEdge~.rdrDayNumber span,
+.aura-date-range-wrapper .rdrDay:not(.rdrDayPassive) .rdrEndEdge~.rdrDayNumber span,
+.aura-date-range-wrapper .rdrDay:not(.rdrDayPassive) .rdrSelected~.rdrDayNumber span {
+  color: hsl(var(--primary-foreground)) !important;
+  font-weight: 500;
+}
+
+.aura-date-range-wrapper .rdrDayHovered {
+  border-color: hsl(var(--primary) / 0.5) !important;
+}
+
+.aura-date-range-wrapper .rdrDayPassive .rdrDayNumber span {
+  color: hsl(var(--muted-foreground)) !important;
+  opacity: 0.5;
+}
+
+
+.aura-date-range-wrapper .rdrDateDisplayWrapper {
+  background-color: transparent !important;
+}
+
+.aura-date-range-wrapper .rdrDateDisplayItem {
+  background-color: hsl(var(--input)) !important;
+  border: 1px solid hsl(var(--border)) !important;
+  border-radius: var(--radius) !important;
+  box-shadow: none !important;
+}
+
+.aura-date-range-wrapper .rdrDateDisplayItemActive {
+  border-color: hsl(var(--primary)) !important;
+}
+
+.aura-date-range-wrapper .rdrDateDisplayItem input {
+  color: hsl(var(--foreground)) !important;
+  background: transparent !important;
+}
+
+.aura-date-range-wrapper .rdrStaticRanges button,
+.aura-date-range-wrapper .rdrDefinedRangesWrapper {
+  background: hsl(var(--popover));
+  border-right: 1px solid hsl(var(--border));
+}
+
+.aura-date-range-wrapper .rdrStaticRange:hover,
+.aura-date-range-wrapper .rdrStaticRange.rdrStaticRangeSelected {
+  background: hsl(var(--accent)) !important;
+  color: hsl(var(--accent-foreground)) !important;
+}
+
+.aura-date-range-wrapper .rdrStaticRange {
+  background: transparent !important;
+  color: hsl(var(--foreground)) !important;
+  border-bottom: 1px solid hsl(var(--border));
+}

@@ -1,0 +1,57 @@
+import { useAuth } from '@/context/AuthContext';
+import { AdminType } from '@/types/admin.types';
+
+/**
+ * Hook for admin type utilities
+ */
+export function useAdminType() {
+  const { user } = useAuth();
+
+  const isBrandAdmin = user?.adminType === 'brand';
+  const isAgencyAdmin = user?.adminType === 'agency';
+  const isOwnerAdmin = user?.adminType === 'owner';
+
+  const getDefaultRoute = (): string => {
+    if (!user) return '/login';
+
+    switch (user.adminType) {
+      case 'brand':
+        return '/brand/dashboard';
+      case 'agency':
+        return '/agency/dashboard';
+      case 'owner':
+        return '/owner/dashboard';
+      default:
+        return '/';
+    }
+  };
+
+  const getAdminTypeLabel = (): string => {
+    if (!user) return '';
+
+    switch (user.adminType) {
+      case 'brand':
+        return 'Brand Admin';
+      case 'agency':
+        return 'Agency Admin';
+      case 'owner':
+        return 'Super Admin';
+      default:
+        return '';
+    }
+  };
+
+  const canSwitchContext = (): boolean => {
+    return isAgencyAdmin || isOwnerAdmin;
+  };
+
+  return {
+    adminType: user?.adminType,
+    isBrandAdmin,
+    isAgencyAdmin,
+    isOwnerAdmin,
+    getDefaultRoute,
+    getAdminTypeLabel,
+    canSwitchContext,
+  };
+}
