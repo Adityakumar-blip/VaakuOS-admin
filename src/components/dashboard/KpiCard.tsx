@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { ArrowUpRightIcon, ArrowDownRightIcon } from '@heroicons/react/24/outline';
 import { cn } from '@/lib/utils';
 
 interface KpiCardProps {
@@ -23,7 +23,7 @@ export function KpiCard({ title, value, change, trend, icon }: KpiCardProps) {
             trend === 'up' ? 'text-success' : 'text-destructive'
           )}
         >
-          {trend === 'up' ? <ArrowUpRight size={16} /> : <ArrowDownRight size={16} />}
+          {trend === 'up' ? <ArrowUpRightIcon className="w-4 h-4" /> : <ArrowDownRightIcon className="w-4 h-4" />}
           {change}
         </div>
       </div>

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 
 interface TablePaginationProps {
     currentPage: number;
@@ -78,7 +78,7 @@ export function TablePagination({
                     disabled={currentPage === 1}
                     className="h-9 w-9"
                 >
-                    <ChevronLeft size={16} />
+                    <ChevronLeftIcon className="w-4 h-4" />
                 </Button>
 
                 {/* Page Numbers */}
@@ -115,7 +115,7 @@ export function TablePagination({
                     disabled={currentPage === totalPages}
                     className="h-9 w-9"
                 >
-                    <ChevronRight size={16} />
+                    <ChevronRightIcon className="w-4 h-4" />
                 </Button>
             </div>
 

@@ -1,7 +1,13 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/context/AuthContext';
-import { Building, Building2, MessageSquare, DollarSign, TrendingUp, AlertTriangle } from 'lucide-react';
+import { 
+    BuildingOfficeIcon as Building, 
+    BuildingOffice2Icon as Building2, 
+    ChatBubbleBottomCenterTextIcon as MessageSquare, 
+    CurrencyDollarIcon as DollarSign, 
+    ExclamationTriangleIcon as AlertTriangle 
+} from '@heroicons/react/24/outline';
 
 export default function OwnerDashboard() {
     const { user } = useAuth();

@@ -21,6 +21,7 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { TablePagination } from '@/components/table/table-pagination';
+import { BulkActionBar } from '@/components/table/bulk-action-bar';
 import { cn } from '@/lib/utils';
 
 export interface BulkAction<TData> {
@@ -28,6 +29,7 @@ export interface BulkAction<TData> {
     icon?: ReactNode;
     onClick: (selectedRows: TData[]) => void;
     variant?: "default" | "destructive";
+    shortcut?: string; // e.g., 'd', 's', 'Enter'
 }
 
 interface DataTableProps<TData, TValue> {
@@ -148,7 +150,16 @@ export function DataTable<TData, TValue>({
 
     return (
         <div className="w-full space-y-4">
-            {/* Top Bulk Action Bar - Removed for cleaner design */}
+            {/* Top Bulk Action Bar - Inline for quick access */}
+            {selectedCount > 0 && bulkActions.length > 0 && (
+                <BulkActionBar
+                    selectedCount={selectedCount}
+                    totalCount={data.length}
+                    actions={bulkActions}
+                    onClearSelection={() => table.resetRowSelection()}
+                    onActionClick={handleBulkAction}
+                />
+            )}
 
             <div className={cn("rounded-md border border-border bg-card overflow-hidden", isFetching && "relative")}>
                 {isFetching && !isLoading && (
@@ -222,35 +233,6 @@ export function DataTable<TData, TValue>({
                     onPageChange={(page) => table.setPageIndex(page - 1)}
                 />
             ) : null)}
-
-            {/* Sticky Bottom Bulk Action Bar - Sleek Design */}
-            {selectedCount > 0 && bulkActions.length > 0 && (
-                <div className="animate-in fade-in slide-in-from-bottom-2 duration-200 fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
-                    <div className="bg-gray-900 dark:bg-gray-800 text-white rounded-lg shadow-2xl border border-gray-700 px-4 py-3 flex items-center gap-4">
-                        <span className="text-sm font-medium">
-                            {selectedCount} of 100 selected
-                        </span>
-                        <div className="h-4 w-px bg-gray-700"></div>
-                        <div className="flex items-center gap-2">
-                            {bulkActions.map((action, index) => (
-                                <button
-                                    key={index}
-                                    onClick={() => handleBulkAction(action)}
-                                    className={cn(
-                                        "flex items-center gap-2 px-3 py-1.5 rounded text-sm font-medium transition-colors",
-                                        action.variant === "destructive"
-                                            ? "hover:bg-red-600/20 text-red-400 hover:text-red-300"
-                                            : "hover:bg-gray-700 text-gray-300 hover:text-white"
-                                    )}
-                                >
-                                    {action.icon}
-                                    {action.label}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            )}
         </div>
     );
 }

@@ -1,7 +1,16 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/context/AuthContext';
-import { LayoutDashboard, MessageSquare, FileText, CreditCard, TrendingUp, Users, DollarSign, ShoppingCart } from 'lucide-react';
+import { 
+    Squares2X2Icon as LayoutDashboard, 
+    ChatBubbleLeftRightIcon as MessageSquare, 
+    DocumentTextIcon as FileText, 
+    CreditCardIcon as CreditCard, 
+    ArrowTrendingUpIcon as TrendingUp, 
+    UsersIcon as Users, 
+    CurrencyDollarIcon as DollarSign, 
+    ShoppingCartIcon as ShoppingCart 
+} from '@heroicons/react/24/outline';
 import { useTenant } from '@/context/TenantContext';
 import { KpiCard } from '@/components/dashboard/KpiCard';
 import { LineChartWidget } from '@/components/dashboard/LineChartWidget';
@@ -50,28 +59,28 @@ export default function BrandDashboard() {
             value: '$45,231.89',
             change: '+20.1%',
             trend: 'up' as const,
-            icon: <DollarSign size={20} />,
+            icon: <DollarSign className="w-5 h-5" />,
         },
         {
             title: 'Active Users',
             value: '2,350',
             change: '+180',
             trend: 'up' as const,
-            icon: <Users size={20} />,
+            icon: <Users className="w-5 h-5" />,
         },
         {
             title: 'Orders',
             value: '12,234',
             change: '-3.2%',
             trend: 'down' as const,
-            icon: <ShoppingCart size={20} />,
+            icon: <ShoppingCart className="w-5 h-5" />,
         },
         {
             title: 'Growth Rate',
             value: '+12.5%',
             change: '+2.1%',
             trend: 'up' as const,
-            icon: <TrendingUp size={20} />,
+            icon: <TrendingUp className="w-5 h-5" />,
         },
     ];
 

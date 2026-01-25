@@ -7,12 +7,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import {
-    MoreHorizontal,
-    Edit,
-    Trash2,
-    Shield,
-    Eye,
-} from "lucide-react";
+    EllipsisHorizontalIcon,
+    PencilIcon,
+    TrashIcon,
+    ShieldCheckIcon,
+    EyeIcon,
+} from "@heroicons/react/24/outline";
 import { cn } from "@/lib/utils";
 
 interface ActionItem {
@@ -42,7 +42,7 @@ export function RowActions({
     deleteLabel = "Delete",
     viewLabel = "View Details",
     extraActions = [],
-    triggerIcon = <MoreHorizontal size={16} />,
+    triggerIcon = <EllipsisHorizontalIcon className="w-4 h-4" />,
     className,
 }: RowActionsProps) {
     if (!onEdit && !onDelete && !onView && extraActions.length === 0) {
@@ -64,14 +64,14 @@ export function RowActions({
                 <DropdownMenuContent align="end">
                     {onEdit && (
                         <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onEdit(); }}>
-                            <Edit size={16} className="mr-2" />
+                            <PencilIcon className="w-4 h-4 mr-2" />
                             {editLabel}
                         </DropdownMenuItem>
                     )}
 
                     {onView && (
                         <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onView(); }}>
-                            <Shield size={16} className="mr-2" />
+                            <ShieldCheckIcon className="w-4 h-4 mr-2" />
                             {viewLabel}
                         </DropdownMenuItem>
                     )}
@@ -96,7 +96,7 @@ export function RowActions({
                             className="text-destructive focus:text-destructive"
                             onClick={(e) => { e.stopPropagation(); onDelete(); }}
                         >
-                            <Trash2 size={16} className="mr-2" />
+                            <TrashIcon className="w-4 h-4 mr-2" />
                             {deleteLabel}
                         </DropdownMenuItem>
                     )}

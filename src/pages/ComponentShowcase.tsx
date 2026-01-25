@@ -52,7 +52,15 @@ import {
 } from "@/components/ui/drawer";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { toast } from 'sonner';
-import { Info, AlertCircle, CheckCircle, Sparkles, Terminal, Rocket, Bell } from 'lucide-react';
+import { 
+  InformationCircleIcon as Info, 
+  ExclamationCircleIcon as AlertCircle, 
+  CheckCircleIcon as CheckCircle, 
+  SparklesIcon as Sparkles, 
+  CommandLineIcon as Terminal, 
+  RocketLaunchIcon as Rocket, 
+  BellIcon as Bell 
+} from '@heroicons/react/24/outline';
 import { DatePicker } from '@/components/ui/date-picker';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
 import {
@@ -170,7 +178,7 @@ export default function ComponentShowcase() {
                 <Button size="sm">Small</Button>
                 <Button size="default">Default</Button>
                 <Button size="lg">Large</Button>
-                <Button size="icon"><Sparkles size={18} /></Button>
+                <Button size="icon"><Sparkles className="w-5 h-5" /></Button>
               </div>
             </section>
           </div>
@@ -206,7 +214,7 @@ export default function ComponentShowcase() {
                   <div className="relative">
                     <Input id="with-icon" placeholder="Search..." className="pl-9" />
                     <span className="absolute left-3 top-2.5 text-muted-foreground">
-                      <Rocket size={16} />
+                      <Rocket className="w-4 h-4" />
                     </span>
                   </div>
                 </div>
@@ -696,7 +704,7 @@ export default function ComponentShowcase() {
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button variant="outline" size="icon">
-                      <Info size={18} />
+                      <Info className="w-5 h-5" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -708,7 +716,7 @@ export default function ComponentShowcase() {
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button variant="outline" size="icon">
-                      <Bell size={18} />
+                      <Bell className="w-5 h-5" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -720,7 +728,7 @@ export default function ComponentShowcase() {
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button variant="outline" size="icon">
-                      <CheckCircle size={18} />
+                      <CheckCircle className="w-5 h-5" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>

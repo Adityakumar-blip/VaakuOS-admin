@@ -2,7 +2,7 @@ import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { usePermission } from '@/hooks/usePermission';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertTriangle } from 'lucide-react';
+import { ExclamationTriangleIcon as AlertTriangle } from '@heroicons/react/24/outline';
 
 interface PermissionGuardProps {
     requiredPermissions: string[];

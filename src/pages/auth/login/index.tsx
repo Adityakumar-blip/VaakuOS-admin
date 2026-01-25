@@ -5,7 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Eye, EyeOff, Mail, Lock } from 'lucide-react';
+import { 
+    EyeIcon, 
+    EyeSlashIcon, 
+    EnvelopeIcon, 
+    LockClosedIcon 
+} from '@heroicons/react/24/outline';
 
 // Development credentials for quick testing
 const DEV_CREDENTIALS = {
@@ -98,7 +103,7 @@ export default function Login() {
                     <div className="space-y-2">
                         <Label htmlFor="email">Email</Label>
                         <div className="relative">
-                            <Mail size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                            <EnvelopeIcon className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                             <Input
                                 id="email"
                                 type="email"
@@ -114,7 +119,7 @@ export default function Login() {
                     <div className="space-y-2">
                         <Label htmlFor="password">Password</Label>
                         <div className="relative">
-                            <Lock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                            <LockClosedIcon className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                             <Input
                                 id="password"
                                 type={showPassword ? 'text' : 'password'}
@@ -129,7 +134,7 @@ export default function Login() {
                                 onClick={() => setShowPassword(!showPassword)}
                                 className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                             >
-                                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                {showPassword ? <EyeSlashIcon className="w-5 h-5" /> : <EyeIcon className="w-5 h-5" />}
                             </button>
                         </div>
                     </div>

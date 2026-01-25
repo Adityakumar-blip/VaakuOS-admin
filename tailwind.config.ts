@@ -1,5 +1,4 @@
 import type { Config } from "tailwindcss";
-import tailwindcssAnimate from "tailwindcss-animate";
 
 export default {
   darkMode: ["class"],
@@ -15,8 +14,29 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ['General Sans', 'system-ui', 'sans-serif'],
-        mono: ['JetBrains Mono', 'monospace'],
+        sans: ["var(--font-sans)"],
+        mono: ["var(--font-mono)"],
+      },
+      fontSize: {
+        // Redefining standard scale for global subtlety
+        "xs": ["var(--fs-small)", { lineHeight: "1.4", letterSpacing: "0.01em" }],
+        "sm": ["var(--fs-p)", { lineHeight: "1.5", letterSpacing: "0" }],
+        "base": ["var(--fs-p-lg)", { lineHeight: "1.6", letterSpacing: "0" }],
+        "lg": ["var(--fs-h4)", { lineHeight: "1.5", letterSpacing: "-0.01em" }],
+        "xl": ["var(--fs-h3)", { lineHeight: "1.4", letterSpacing: "-0.01em" }],
+        "2xl": ["var(--fs-h2)", { lineHeight: "1.3", letterSpacing: "-0.02em" }],
+        "3xl": ["var(--fs-h1)", { lineHeight: "1.2", letterSpacing: "-0.02em" }],
+        "4xl": ["1.75rem", { lineHeight: "1.2", letterSpacing: "-0.03em" }],
+        "5xl": ["2.25rem", { lineHeight: "1", letterSpacing: "-0.04em" }],
+
+        // Semantic aliases
+        "h1": ["var(--fs-h1)", { lineHeight: "1.2" }],
+        "h2": ["var(--fs-h2)", { lineHeight: "1.3" }],
+        "h3": ["var(--fs-h3)", { lineHeight: "1.4" }],
+        "h4": ["var(--fs-h4)", { lineHeight: "1.5" }],
+        "p": ["var(--fs-p)", { lineHeight: "1.6" }],
+        "p-lg": ["var(--fs-p-lg)", { lineHeight: "1.6" }],
+        "small": ["var(--fs-small)", { lineHeight: "1.4" }],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -28,15 +48,27 @@ export default {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",
           hover: "hsl(var(--primary-hover))",
-          muted: "hsl(var(--brand-primary-muted))",
         },
         secondary: {
           DEFAULT: "hsl(var(--secondary))",
           foreground: "hsl(var(--secondary-foreground))",
+          hover: "hsl(var(--secondary-hover))",
         },
         destructive: {
           DEFAULT: "hsl(var(--destructive))",
           foreground: "hsl(var(--destructive-foreground))",
+        },
+        success: {
+          DEFAULT: "hsl(var(--success))",
+          foreground: "hsl(var(--success-foreground))",
+        },
+        warning: {
+          DEFAULT: "hsl(var(--warning))",
+          foreground: "hsl(var(--warning-foreground))",
+        },
+        info: {
+          DEFAULT: "hsl(var(--info))",
+          foreground: "hsl(var(--info-foreground))",
         },
         muted: {
           DEFAULT: "hsl(var(--muted))",
@@ -45,6 +77,12 @@ export default {
         accent: {
           DEFAULT: "hsl(var(--accent))",
           foreground: "hsl(var(--accent-foreground))",
+          hover: "hsl(var(--accent-hover))",
+        },
+        tertiary: {
+          DEFAULT: "hsl(var(--tertiary))",
+          foreground: "hsl(var(--tertiary-foreground))",
+          hover: "hsl(var(--tertiary-hover))",
         },
         popover: {
           DEFAULT: "hsl(var(--popover))",
@@ -63,77 +101,49 @@ export default {
           "accent-foreground": "hsl(var(--sidebar-accent-foreground))",
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
-          muted: "hsl(var(--sidebar-muted))",
+          hover: "hsl(var(--sidebar-hover))",
+          active: "hsl(var(--sidebar-active))",
+          "active-foreground": "hsl(var(--sidebar-active-foreground))",
         },
-        success: {
-          DEFAULT: "hsl(var(--success))",
-          foreground: "hsl(var(--success-foreground))",
-        },
-        warning: {
-          DEFAULT: "hsl(var(--warning))",
-          foreground: "hsl(var(--warning-foreground))",
-        },
-        info: {
-          DEFAULT: "hsl(var(--info))",
-          foreground: "hsl(var(--info-foreground))",
-        },
-        chart: {
-          "1": "hsl(var(--chart-1))",
-          "2": "hsl(var(--chart-2))",
-          "3": "hsl(var(--chart-3))",
-          "4": "hsl(var(--chart-4))",
-          "5": "hsl(var(--chart-5))",
-        },
+      },
+      boxShadow: {
+        sm: "var(--shadow-sm)",
+        md: "var(--shadow-md)",
+        lg: "var(--shadow-lg)",
+        xl: "var(--shadow-xl)",
+      },
+      transitionProperty: {
+        base: "var(--transition-base)",
+        slow: "var(--transition-slow)",
       },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
       },
-      boxShadow: {
-        soft: "var(--shadow-md)",
-        glow: "0 0 20px hsl(var(--brand-primary) / 0.3)",
-      },
       keyframes: {
         "accordion-down": {
-          from: { height: "0" },
-          to: { height: "var(--radix-accordion-content-height)" },
+          from: {
+            height: "0",
+          },
+          to: {
+            height: "var(--radix-accordion-content-height)",
+          },
         },
         "accordion-up": {
-          from: { height: "var(--radix-accordion-content-height)" },
-          to: { height: "0" },
-        },
-        "fade-in": {
-          from: { opacity: "0" },
-          to: { opacity: "1" },
-        },
-        "slide-in-left": {
-          from: { opacity: "0", transform: "translateX(-10px)" },
-          to: { opacity: "1", transform: "translateX(0)" },
-        },
-        "slide-in-right": {
-          from: { opacity: "0", transform: "translateX(10px)" },
-          to: { opacity: "1", transform: "translateX(0)" },
-        },
-        "scale-in": {
-          from: { opacity: "0", transform: "scale(0.95)" },
-          to: { opacity: "1", transform: "scale(1)" },
-        },
-        "pulse-soft": {
-          "0%, 100%": { opacity: "1" },
-          "50%": { opacity: "0.5" },
+          from: {
+            height: "var(--radix-accordion-content-height)",
+          },
+          to: {
+            height: "0",
+          },
         },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
-        "fade-in": "fade-in 0.15s ease-out",
-        "slide-in-left": "slide-in-left 0.2s ease-out",
-        "slide-in-right": "slide-in-right 0.2s ease-out",
-        "scale-in": "scale-in 0.2s ease-out",
-        "pulse-soft": "pulse-soft 2s ease-in-out infinite",
       },
     },
   },
-  plugins: [tailwindcssAnimate],
+  plugins: [require("tailwindcss-animate")],
 } satisfies Config;

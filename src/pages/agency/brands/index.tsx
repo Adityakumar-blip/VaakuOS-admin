@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Building2, Plus } from 'lucide-react';
+import { BuildingOffice2Icon, PlusIcon } from '@heroicons/react/24/outline';
 
 export default function AgencyBrands() {
     const brands = [
@@ -19,7 +19,7 @@ export default function AgencyBrands() {
                     <p className="text-muted-foreground mt-2">Manage your agency's brands</p>
                 </div>
                 <Button>
-                    <Plus className="h-4 w-4 mr-2" />
+                    <PlusIcon className="h-4 w-4 mr-2" />
                     Create Brand
                 </Button>
             </div>
@@ -31,7 +31,7 @@ export default function AgencyBrands() {
                             <div className="flex items-start justify-between">
                                 <div>
                                     <CardTitle className="flex items-center gap-3">
-                                        <Building2 className="h-5 w-5" />
+                                        <BuildingOffice2Icon className="h-5 w-5" />
                                         {brand.name}
                                         <Badge variant={brand.status === 'active' ? 'default' : 'secondary'}>{brand.status}</Badge>
                                     </CardTitle>

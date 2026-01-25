@@ -1,7 +1,13 @@
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, ChevronDown, LucideIcon } from 'lucide-react';
-import * as Icons from 'lucide-react';
+import { 
+    ChevronLeftIcon, 
+    ChevronRightIcon, 
+    ChevronDownIcon,
+    ChevronDoubleLeftIcon,
+    ChevronDoubleRightIcon 
+} from '@heroicons/react/24/outline';
+import * as HeroIcons from '@heroicons/react/24/outline';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
@@ -15,6 +21,35 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from '@/components/ui/tooltip';
+
+// Map Lucide icon names to Heroicons names
+const ICON_MAP: Record<string, any> = {
+    'LayoutDashboard': HeroIcons.Squares2X2Icon,
+    'Users': HeroIcons.UsersIcon,
+    'User': HeroIcons.UserIcon,
+    'Shield': HeroIcons.ShieldCheckIcon,
+    'MessageCircle': HeroIcons.ChatBubbleLeftRightIcon,
+    'FileText': HeroIcons.DocumentTextIcon,
+    'Webhook': HeroIcons.ArrowsRightLeftIcon,
+    'CreditCard': HeroIcons.CreditCardIcon,
+    'FileCheck': HeroIcons.DocumentCheckIcon,
+    'Settings': HeroIcons.Cog6ToothIcon,
+    'AlertTriangle': HeroIcons.ExclamationTriangleIcon,
+    'Bell': HeroIcons.BellIcon,
+    'Building': HeroIcons.BuildingOfficeIcon,
+    'Palette': HeroIcons.PaintBrushIcon,
+    'BarChart': HeroIcons.ChartBarIcon,
+    'Briefcase': HeroIcons.BriefcaseIcon,
+    'Calendar': HeroIcons.CalendarIcon,
+    'Ticket': HeroIcons.TicketIcon,
+    'HelpCircle': HeroIcons.QuestionMarkCircleIcon,
+    'Database': HeroIcons.ServerIcon,
+    'Zap': HeroIcons.BoltIcon,
+    'Activity': HeroIcons.PresentationChartLineIcon,
+    'AlertOctagon': HeroIcons.ExclamationCircleIcon,
+    'LayoutTemplate': HeroIcons.RectangleGroupIcon,
+    'Circle': HeroIcons.CircleStackIcon
+};
 
 export function DynamicSidebar() {
     const { collapsed, toggleCollapsed, isExpanded } = useSidebar();
@@ -54,8 +89,15 @@ export function DynamicSidebar() {
 
     // Get icon component from string name
     const getIcon = (iconName: string): React.ReactNode => {
-        const IconComponent = Icons[iconName as keyof typeof Icons] as LucideIcon | undefined;
-        return IconComponent ? <IconComponent size={20} /> : <Icons.Circle size={20} />;
+        // Try direct lookup first (using updated names in modules.config.ts)
+        let IconComponent = (HeroIcons as any)[iconName];
+        
+        // Fallback to ICON_MAP for any legacy names or special mappings
+        if (!IconComponent) {
+            IconComponent = ICON_MAP[iconName] || HeroIcons.QuestionMarkCircleIcon;
+        }
+        
+        return <IconComponent className="w-5 h-5" />;
     };
 
     const renderModule = (module: ModuleConfig) => {
@@ -80,9 +122,8 @@ export function DynamicSidebar() {
                                     {module.name}
                                 </span>
                             </div>
-                            <ChevronDown
-                                size={16}
-                                className={cn('transition-transform duration-200', isOpen ? 'rotate-180' : '')}
+                            <ChevronDownIcon
+                                className={cn('w-4 h-4 transition-transform duration-200', isOpen ? 'rotate-180' : '')}
                             />
                         </div>
                     ) : (
@@ -224,34 +265,13 @@ export function DynamicSidebar() {
                 </div>
 
                 {/* Navigation */}
-                <nav className="flex-1 py-4 px-2 space-y-1 overflow-y-auto">
+                <nav className="flex-1 py-4 px-2 space-y-1 overflow-y-auto stealth-scroll">
                     {modules.map(renderModule)}
                 </nav>
 
                 {/* Footer Section: User Info & Collapse Toggle */}
                 <div className="border-t border-sidebar-border p-2 space-y-1">
-                    {/* User Info */}
-                    <div className={cn(
-                        "flex items-center gap-3 p-2 rounded-lg transition-colors",
-                        isExpanded ? "hover:bg-sidebar-accent" : "justify-center"
-                    )}>
-                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold text-sm shrink-0">
-                            {user?.name.charAt(0).toUpperCase()}
-                        </div>
-                        <div
-                            className={cn(
-                                'transition-all duration-300 overflow-hidden',
-                                isExpanded ? 'opacity-100 w-auto' : 'opacity-0 w-0'
-                            )}
-                        >
-                            <div className="text-sm font-medium text-sidebar-foreground truncate max-w-[150px]">
-                                {user?.name}
-                            </div>
-                            <div className="text-xs text-sidebar-muted truncate max-w-[150px]">
-                                {user?.role}
-                            </div>
-                        </div>
-                    </div>
+
 
                     {/* Collapse Toggle */}
                     <button
@@ -264,7 +284,7 @@ export function DynamicSidebar() {
                         <div className="shrink-0 flex items-center justify-center w-5 h-5">
                             {/* Double Chevron that rotates */}
                             <div className={cn("transition-transform duration-300", collapsed ? "rotate-180" : "rotate-0")}>
-                                {isRtl ? <Icons.ChevronsRight size={20} /> : <Icons.ChevronsLeft size={20} />}
+                                {isRtl ? <ChevronDoubleRightIcon className="w-5 h-5" /> : <ChevronDoubleLeftIcon className="w-5 h-5" />}
                             </div>
                         </div>
                         <span

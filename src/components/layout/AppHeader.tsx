@@ -1,14 +1,14 @@
 import React from 'react';
 import {
-  Search,
-  Bell,
-  Sun,
-  Moon,
-  Languages,
-  ChevronDown,
-  Palette,
-  LogOut,
-} from 'lucide-react';
+  MagnifyingGlassIcon,
+  BellIcon,
+  SunIcon,
+  MoonIcon,
+  LanguageIcon,
+  ChevronDownIcon,
+  SwatchIcon,
+  ArrowRightOnRectangleIcon,
+} from '@heroicons/react/24/outline';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '@/context/ThemeContext';
 import { availablePalettes } from '@/config/settings-registry';
@@ -43,7 +43,7 @@ export function AppHeader() {
           onClick={openSpotlight}
           className="flex items-center gap-2 px-3 py-2 bg-muted rounded-lg text-muted-foreground hover:text-foreground transition-colors min-w-[200px] lg:min-w-[280px]"
         >
-          <Search size={18} />
+          <MagnifyingGlassIcon className="w-5 h-5" />
           <span className="text-sm">Search...</span>
           <kbd className={cn('hidden sm:inline-flex px-1.5 py-0.5 text-xs font-mono bg-background rounded border border-border', isRtl ? 'mr-auto' : 'ml-auto')}>
             ⌘K
@@ -59,7 +59,7 @@ export function AppHeader() {
                 {currentTenant?.name.charAt(0)}
               </div>
               <span className="hidden md:inline text-sm font-medium">{currentTenant?.name}</span>
-              <ChevronDown size={16} className="text-muted-foreground" />
+              <ChevronDownIcon className="w-4 h-4 text-muted-foreground" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align={isRtl ? 'start' : 'end'} className="w-48">
               <DropdownMenuLabel>Switch Tenant</DropdownMenuLabel>
@@ -85,7 +85,7 @@ export function AppHeader() {
             className="p-2 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
             title={`Switch to ${direction === 'ltr' ? 'RTL' : 'LTR'}`}
           >
-            <Languages size={20} />
+            <LanguageIcon className="w-5 h-5" />
           </button>
 
           {/* Theme Toggle */}
@@ -94,13 +94,13 @@ export function AppHeader() {
             className="p-2 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
             title={`Switch to ${theme === 'light' ? 'Dark' : 'Light'} mode`}
           >
-            {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
+            {theme === 'light' ? <MoonIcon className="w-5 h-5" /> : <SunIcon className="w-5 h-5" />}
           </button>
 
           {/* Palette Selector */}
           <DropdownMenu>
             <DropdownMenuTrigger className="p-2 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground">
-              <Palette size={20} />
+              <SwatchIcon className="w-5 h-5" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align={isRtl ? 'start' : 'end'} className="w-40">
               <DropdownMenuLabel>Color Palette</DropdownMenuLabel>
@@ -121,7 +121,7 @@ export function AppHeader() {
 
           {/* Notifications */}
           <button className="relative p-2 rounded-lg hover:bg-muted transition-colors text-muted-foreground hover:text-foreground">
-            <Bell size={20} />
+            <BellIcon className="w-5 h-5" />
             <span className="absolute top-1 right-1 w-2 h-2 bg-destructive rounded-full" />
           </button>
 
@@ -145,7 +145,7 @@ export function AppHeader() {
               <DropdownMenuItem onClick={() => navigate('/settings')}>Settings</DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={logout} className="text-destructive">
-                <LogOut size={16} className="mr-2" />
+                <ArrowRightOnRectangleIcon className="w-4 h-4 mr-2" />
                 Log out
               </DropdownMenuItem>
             </DropdownMenuContent>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sun, Moon, Languages, Check } from 'lucide-react';
+import { SunIcon as Sun, MoonIcon as Moon, LanguageIcon as Languages, CheckIcon as Check } from '@heroicons/react/24/outline';
 import { useTheme } from '@/context/ThemeContext';
 import { availablePalettes } from '@/config/settings-registry';
 import { cn } from '@/lib/utils';
@@ -27,7 +27,7 @@ export default function Settings() {
         <div className="space-y-4">
           <div className="flex items-center justify-between py-3 border-b border-border">
             <div className="flex items-center gap-3">
-              {theme === 'light' ? <Sun size={20} /> : <Moon size={20} />}
+              {theme === 'light' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
               <div>
                 <Label className="text-base font-medium">Theme</Label>
                 <p className="text-sm text-muted-foreground">Choose light or dark mode</p>
@@ -62,7 +62,7 @@ export default function Settings() {
           {/* Direction Toggle */}
           <div className="flex items-center justify-between py-3 border-b border-border">
             <div className="flex items-center gap-3">
-              <Languages size={20} />
+              <Languages className="w-5 h-5" />
               <div>
                 <Label className="text-base font-medium">Text Direction</Label>
                 <p className="text-sm text-muted-foreground">Switch between LTR and RTL</p>
@@ -122,8 +122,7 @@ export default function Settings() {
               <span className="font-medium text-foreground">{p.label}</span>
               {palette === p.id && (
                 <Check
-                  size={18}
-                  className="absolute top-2 right-2 text-primary"
+                  className="absolute top-2 right-2 text-primary w-5 h-5"
                 />
               )}
             </button>

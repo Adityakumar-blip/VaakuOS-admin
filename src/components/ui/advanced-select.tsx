@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useMemo, useCallback } from 'react';
-import { ChevronDown, X, Check } from 'lucide-react';
+import { ChevronDownIcon as ChevronDown, XMarkIcon as X, CheckIcon as Check } from '@heroicons/react/24/outline';
 import { cn } from '@/lib/utils';
 
 export interface SelectOption {
@@ -222,7 +222,7 @@ export function AdvancedSelect({
               )}
             >
               <span className="truncate max-w-[100px]">{getOptionLabel(val)}</span>
-              <X size={12} />
+              <X className="w-3 h-3" />
             </span>
           ))}
           {/* Also measure a dummy +99 badge to ensure we reserve enough space? 
@@ -263,7 +263,7 @@ export function AdvancedSelect({
               }}
               className="hover:bg-primary/20 rounded-full p-0.5 transition-colors"
             >
-              <X size={12} />
+              <X className="w-3 h-3" />
             </button>
           </span>
         ))}
@@ -313,13 +313,12 @@ export function AdvancedSelect({
               }}
               className="p-1 hover:bg-muted rounded-full transition-colors"
             >
-              <X size={14} className="text-muted-foreground" />
+              <X className="w-3.5 h-3.5 text-muted-foreground" />
             </button>
           )}
           <ChevronDown
-            size={16}
             className={cn(
-              'text-muted-foreground transition-transform duration-200',
+              'w-4 h-4 text-muted-foreground transition-transform duration-200',
               isOpen && 'rotate-180'
             )}
           />
@@ -350,7 +349,7 @@ export function AdvancedSelect({
                   )}
                 >
                   <span>{option.label}</span>
-                  {isSelected && <Check size={16} className="text-primary" />}
+                  {isSelected && <Check className="w-4 h-4 text-primary" />}
                 </button>
               );
             })

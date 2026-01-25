@@ -18,6 +18,7 @@ import {
     XCircle,
     RefreshCw,
     Trash2,
+    Download,
 } from 'lucide-react';
 import { TableHeader as TableHeaderComponent, RowActions } from '@/components/table';
 import { ConfirmationDialog } from '@/components/common/ConfirmationDialog';
@@ -222,16 +223,36 @@ export default function OwnerUserPage() {
     // Bulk actions configuration
     const bulkActions: BulkAction<User>[] = [
         {
-            label: "Change Status",
+            label: "Update Status",
             icon: <RefreshCw size={16} />,
             onClick: handleBulkStatusChange,
             variant: "default",
+            shortcut: "s",
+        },
+        {
+            label: "Download CSV",
+            icon: <Download size={16} />,
+            onClick: (users) => {
+                const csvContent = "data:text/csv;charset=utf-8," 
+                    + "Name,Email,Role,Status\n"
+                    + users.map(u => `${u.name},${u.email},${u.role},${u.status}`).join("\n");
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", `users_report_${users.length}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            },
+            variant: "default",
+            shortcut: "c",
         },
         {
             label: "Delete Selected",
             icon: <Trash2 size={16} />,
             onClick: handleBulkDelete,
             variant: "destructive",
+            shortcut: "d",
         },
     ];
 

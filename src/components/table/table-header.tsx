@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, Filter, Trash2 } from 'lucide-react';
+import { MagnifyingGlassIcon as Search, FunnelIcon as Filter, TrashIcon as Trash2 } from '@heroicons/react/24/outline';
 import { ShowEntriesSelect } from './show-entries-select';
 import {
     DropdownMenu,
@@ -64,7 +64,7 @@ export function TableHeader({
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button variant="outline" size="default" className="gap-2">
-                                    <Filter size={16} />
+                                    <Filter className="w-4 h-4" />
                                     Filter
                                 </Button>
                             </DropdownMenuTrigger>
@@ -76,7 +76,7 @@ export function TableHeader({
 
                     {/* Search Field */}
                     <div className="relative w-full sm:w-[300px]">
-                        <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
                         <Input
                             placeholder={searchPlaceholder}
                             value={searchValue}
@@ -93,7 +93,7 @@ export function TableHeader({
                             disabled={deleteDisabled}
                             className="gap-2"
                         >
-                            <Trash2 size={16} />
+                            <Trash2 className="w-4 h-4" />
                             Delete
                         </Button>
                     )}
