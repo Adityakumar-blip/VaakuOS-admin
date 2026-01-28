@@ -6,8 +6,20 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { StatusSwitch } from '@/components/ui/status-switch';
 import { ArrowLeft, Edit } from 'lucide-react';
-import { userService, type User } from '@/services/userService';
 import { toast } from 'sonner';
+import { 
+    useAddUserMutation, 
+    useUpdateUserMutation, 
+    useGetUserByIdQuery 
+} from '@/store/api/userApi';
+import { useGetRolesQuery } from '@/store/api/roleApi';
+import { 
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 
 export default function OwnerCreateUserPage() {
     const navigate = useNavigate();
@@ -25,59 +37,63 @@ export default function OwnerCreateUserPage() {
         password: '',
         phone: '',
         isActive: true,
-        role: 'user', // Default role
+        role: '', // Default role
     });
 
+    // Fetch user details if in edit/view mode
+    const { data: user, isLoading: isUserLoading } = useGetUserByIdQuery(id as string, {
+        skip: !id,
+    });
+
+    // Fetch available roles
+    const { data: rolesResponse } = useGetRolesQuery({});
+    const roles = rolesResponse?.data || [];
+
+    const [addUser] = useAddUserMutation();
+    const [updateUser] = useUpdateUserMutation();
+
     useEffect(() => {
-        if (id) {
-            const user = userService.getUserById(id);
-            if (user) {
-                setFormData({
-                    fullName: user.name,
-                    email: user.email,
-                    password: '', // Don't show password on edit
-                    phone: user.phone || '',
-                    isActive: user.status === 'active',
-                    role: user.role,
-                });
-            } else {
-                toast.error('User not found');
-                navigate('/owner/team/user');
-            }
+        if (user) {
+            setFormData({
+                fullName: user.name,
+                email: user.email,
+                password: '', // Don't show password on edit
+                phone: user.phone_number || '',
+                isActive: user.status === 'active',
+                role: user.user_roles?.[0]?.roles?.id || '',
+            });
         }
-    }, [id, navigate]);
+    }, [user]);
 
     const handleInputChange = (field: string, value: string | boolean) => {
         setFormData(prev => ({ ...prev, [field]: value }));
     };
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         try {
+            const userData = {
+                name: formData.fullName,
+                email: formData.email,
+                roleId: formData.role,
+                status: formData.isActive ? 'active' : ('inactive' as 'inactive'),
+                phone_number: formData.phone,
+                ...(formData.password ? { password: formData.password } : {}),
+            };
+
             if (isAddMode) {
-                userService.createUser({
-                    name: formData.fullName,
-                    email: formData.email,
-                    role: formData.role as User['role'],
-                    status: formData.isActive ? 'active' : 'inactive',
-                    phone: formData.phone,
-                });
+                await addUser(userData).unwrap();
                 toast.success('User created successfully');
             } else if (isEditMode && id) {
-                userService.updateUser(id, {
-                    name: formData.fullName,
-                    email: formData.email,
-                    role: formData.role as User['role'],
-                    status: formData.isActive ? 'active' : 'inactive',
-                    phone: formData.phone,
-                });
+                await updateUser({ id, data: userData }).unwrap();
                 toast.success('User updated successfully');
             }
             navigate('/owner/team/user');
         } catch (error) {
             console.error(error);
-            toast.error('Failed to save user');
+            // Error toast is handled by api middleware
         }
     };
+
 
     const getTitle = () => {
         if (isViewMode) return 'User Details';
@@ -149,6 +165,26 @@ export default function OwnerCreateUserPage() {
                             />
                         </div>
                     )}
+                    <div className="space-y-2">
+                        <Label htmlFor="user-role">Role<span className="text-red-500">*</span></Label>
+                        <Select
+                            disabled={isViewMode}
+                            value={formData.role}
+                            onValueChange={(value) => handleInputChange('role', value)}
+                        >
+                            <SelectTrigger id="user-role">
+                                <SelectValue placeholder="Select a role" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {roles.map((role) => (
+                                    <SelectItem key={role.id} value={role.id}>
+                                        {role.name}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+
                     <div className="space-y-2">
                         <Label htmlFor="user-phone">Phone</Label>
                         <Input

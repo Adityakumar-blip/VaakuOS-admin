@@ -1,78 +1,53 @@
 import { api } from './api';
+import { Role } from './roleApi';
 
 // User types
 export interface User {
   id: string;
   name: string;
   email: string;
-  phone?: string;
+  phone_number?: string;
   password?: string;
+  role?: string | Role;
+  user_roles?: { roles: Role }[];
   status: 'active' | 'inactive';
-  createdAt?: string;
-  updatedAt?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
-export interface UsersResponse {
-  data: User[];
-  pagination: {
-    total: number;
-    currentPage: number;
-    totalPages: number;
-    hasNext: boolean;
-    hasPrevious: boolean;
-  };
-}
 
 export interface GetUsersParams {
-  page?: number;
-  take?: number;
   search?: string;
-  filters?: Record<string, string | number | boolean | null | undefined>;
-}
-
-export interface DeleteUsersParams {
-  ids: string[];
-  selectAll?: boolean;
-  excludedIds?: string[];
 }
 
 export const userApi = api.injectEndpoints({
   endpoints: (builder) => ({
-    // Get users with pagination
-    getUsers: builder.query<UsersResponse, GetUsersParams>({
+    // Get all users
+    getUsers: builder.query<User[], GetUsersParams>({
       query: (params) => {
         const queryParams = new URLSearchParams();
-        if (params.page) queryParams.append('page', params.page.toString());
-        if (params.take) queryParams.append('take', params.take.toString());
         if (params.search) queryParams.append('search', params.search);
-        if (params.filters) {
-          Object.entries(params.filters).forEach(([key, value]) => {
-            if (value !== undefined && value !== null) {
-              queryParams.append(key, value.toString());
-            }
-          });
-        }
-        return `/user/get?${queryParams.toString()}`;
+        return `/users?${queryParams.toString()}`;
       },
       providesTags: (result) =>
         result
           ? [
-              { type: 'User', id: 'LIST' },
-              ...result.data.map(({ id }) => ({ type: 'User' as const, id })),
-            ]
+            { type: 'User', id: 'LIST' },
+            ...result.map(({ id }) => ({ type: 'User' as const, id })),
+          ]
           : [{ type: 'User', id: 'LIST' }],
     }),
 
     // Get user by ID
     getUserById: builder.query<User, string>({
-      query: (id) => `/user/${id}`,
+      query: (id) => `/users/${id}`,
       providesTags: (result, error, id) => [{ type: 'User', id }],
     }),
 
     // Add new user
     addUser: builder.mutation<User, Partial<User>>({
       query: (data) => ({
-        url: '/user/add',
+        url: '/users',
         method: 'POST',
         body: data,
       }),
@@ -82,7 +57,7 @@ export const userApi = api.injectEndpoints({
     // Update user
     updateUser: builder.mutation<User, { id: string; data: Partial<User> }>({
       query: ({ id, data }) => ({
-        url: `/user/${id}`,
+        url: `/users/${id}`,
         method: 'PATCH',
         body: data,
       }),
@@ -92,12 +67,11 @@ export const userApi = api.injectEndpoints({
       ],
     }),
 
-    // Delete user(s) - supports both single and bulk delete
-    deleteUsers: builder.mutation<void, DeleteUsersParams>({
-      query: (params) => ({
-        url: '/user/delete',
+    // Delete user
+    deleteUser: builder.mutation<void, string>({
+      query: (id) => ({
+        url: `/users/${id}`,
         method: 'DELETE',
-        body: params,
       }),
       invalidatesTags: [{ type: 'User', id: 'LIST' }],
     }),
@@ -111,5 +85,5 @@ export const {
   useLazyGetUserByIdQuery,
   useAddUserMutation,
   useUpdateUserMutation,
-  useDeleteUsersMutation,
+  useDeleteUserMutation,
 } = userApi;

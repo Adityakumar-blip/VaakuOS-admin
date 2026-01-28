@@ -22,18 +22,27 @@ import {
 } from 'lucide-react';
 import { TableHeader as TableHeaderComponent, RowActions } from '@/components/table';
 import { ConfirmationDialog } from '@/components/common/ConfirmationDialog';
-import { userService, type User } from '@/services/userService';
-import { DataTable, BulkAction } from '@/components/ui/data-table';
-import { ColumnDef } from '@tanstack/react-table';
+import { DataTable, type BulkAction } from '@/components/ui/data-table';
+import { type ColumnDef } from '@tanstack/react-table';
+import { useGetUsersQuery, useDeleteUserMutation, useUpdateUserMutation, type User } from '@/store/api/userApi';
+import { type Role } from '@/store/api/roleApi';
 
 export default function OwnerUserPage() {
     const navigate = useNavigate();
 
-    // Users state
-    const [users, setUsers] = useState<User[]>(() => userService.getUsers());
-
     // Search state
     const [search, setSearch] = useState('');
+
+    // Pagination state with URL persistence
+    const { pageSize, pageIndex, setPageSize, setPageIndex } = usePaginationState({
+        defaultPageSize: 10,
+        defaultPageIndex: 0,
+    });
+
+    // Fetch users from API
+    const { data: users = [], isLoading } = useGetUsersQuery({
+        search,
+    });
 
     // Selection state
     const [selectedRows, setSelectedRows] = useState<Record<string, boolean>>({});
@@ -47,14 +56,12 @@ export default function OwnerUserPage() {
     const [usersToChangeStatus, setUsersToChangeStatus] = useState<User[]>([]);
     const [newStatus, setNewStatus] = useState<'active' | 'inactive'>('active');
 
-    // Pagination state with URL persistence
-    const { pageSize, pageIndex, setPageSize, setPageIndex } = usePaginationState({
-        defaultPageSize: 10,
-        defaultPageIndex: 0,
-    });
+    const [deleteUser] = useDeleteUserMutation();
+    const [updateUser] = useUpdateUserMutation();
 
     const handleSearchChange = (value: string) => {
         setSearch(value);
+        setPageIndex(0);
     };
 
     const handleDeleteClick = () => {
@@ -66,18 +73,22 @@ export default function OwnerUserPage() {
         setDeleteConfirmOpen(true);
     };
 
-    const handleConfirmDelete = () => {
-        if (userToDelete) {
-            userService.deleteUser(userToDelete);
-            setUserToDelete(null);
-        } else {
-            const selectedIds = Object.keys(selectedRows);
-            userService.deleteUsers(selectedIds);
-            setSelectedRows({});
+    const handleConfirmDelete = async () => {
+        try {
+            if (userToDelete) {
+                await deleteUser(userToDelete).unwrap();
+                setUserToDelete(null);
+            } else {
+                const selectedIds = Object.keys(selectedRows);
+                await Promise.all(selectedIds.map(id => deleteUser(id).unwrap()));
+                setSelectedRows({});
+            }
+            setDeleteConfirmOpen(false);
+        } catch (error) {
+            console.error('Failed to delete users:', error);
         }
-        setUsers(userService.getUsers());
-        setDeleteConfirmOpen(false);
     };
+
 
     const handleBulkDelete = (selectedUsers: User[]) => {
         setUserToDelete(null); // Indicates bulk mode
@@ -91,14 +102,19 @@ export default function OwnerUserPage() {
         setStatusChangeDialogOpen(true);
     };
 
-    const handleConfirmStatusChange = () => {
-        usersToChangeStatus.forEach(user => {
-            userService.updateUser(user.id, { status: newStatus });
-        });
-        setUsers(userService.getUsers());
-        setStatusChangeDialogOpen(false);
-        setUsersToChangeStatus([]);
-        setSelectedRows({});
+    const handleConfirmStatusChange = async () => {
+        try {
+            await Promise.all(
+                usersToChangeStatus.map(user => 
+                    updateUser({ id: user.id as string, data: { status: newStatus } }).unwrap()
+                )
+            );
+            setStatusChangeDialogOpen(false);
+            setUsersToChangeStatus([]);
+            setSelectedRows({});
+        } catch (error) {
+            console.error('Failed to update status:', error);
+        }
     };
 
     // Define columns
@@ -150,14 +166,22 @@ export default function OwnerUserPage() {
             accessorKey: "role",
             header: "Role",
             cell: ({ row }) => {
-                const role = row.getValue("role") as string;
+                const user = row.original;
+                const roles = user.user_roles?.map((ur: any) => ur.roles?.name).filter(Boolean) || [];
                 return (
-                    <Badge variant="outline" className="capitalize font-normal">
-                        {role}
-                    </Badge>
+                    <div className="flex flex-wrap gap-1">
+                        {roles.length > 0 ? roles.map((roleName: string) => (
+                            <Badge key={roleName} variant="outline" className="capitalize font-normal">
+                                {roleName}
+                            </Badge>
+                        )) : (
+                            <span className="text-muted-foreground text-xs italic">No Role</span>
+                        )}
+                    </div>
                 );
             }
         },
+
         {
             accessorKey: "status",
             header: "Status",
