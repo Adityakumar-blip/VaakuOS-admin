@@ -5,12 +5,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { 
-    EyeIcon, 
-    EyeSlashIcon, 
-    EnvelopeIcon, 
-    LockClosedIcon 
+import {
+    EyeIcon,
+    EyeSlashIcon,
+    EnvelopeIcon,
+    LockClosedIcon
 } from '@heroicons/react/24/outline';
+import { getHomeRoute } from '@/utils/navigation';
+import { TenantType } from '@/types/auth';
 
 // Development credentials for quick testing
 const DEV_CREDENTIALS = {
@@ -38,7 +40,7 @@ export default function Login() {
     const [rememberMe, setRememberMe] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [selectedAdminType, setSelectedAdminType] = useState<'brand' | 'agency' | 'owner'>('brand');
-    const { login } = useAuth();
+    const { login, user } = useAuth();
     const navigate = useNavigate();
 
     // Auto-fill credentials when admin type changes
@@ -52,8 +54,28 @@ export default function Login() {
         e.preventDefault();
         setIsLoading(true);
         try {
-            await login(email, password, rememberMe);
-            navigate('/');
+            const loggedInUser = await login(email, password, rememberMe);
+
+            // Navigate based on user's tenant type after successful login
+            // Navigate based on user's tenant type after successful login
+            let tenantType: TenantType;
+            // Map AdminType back to TenantType for navigation utility
+            switch (loggedInUser.adminType) {
+                case 'owner':
+                    tenantType = TenantType.INTERNAL;
+                    break;
+                case 'brand':
+                    tenantType = TenantType.BUSINESS;
+                    break;
+                case 'agency':
+                    tenantType = TenantType.AGENCY;
+                    break;
+                default:
+                    tenantType = loggedInUser.adminType as unknown as TenantType;
+            }
+
+            const route = getHomeRoute(tenantType);
+            navigate(route);
         } finally {
             setIsLoading(false);
         }
@@ -149,7 +171,7 @@ export default function Login() {
                             />
                             Remember me
                         </label>
-                        <Link to="/forgot-password" className="text-primary hover:underline">
+                        <Link to="/forgot-password" state={{ email }} className="text-primary hover:underline">
                             Forgot password?
                         </Link>
                     </div>

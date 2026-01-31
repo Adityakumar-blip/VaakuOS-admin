@@ -1,12 +1,16 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { AdminUser, AdminType, AdminRole } from '@/types/admin.types';
+import { TenantType, UserInfo } from '@/types/auth';
 import { getPermissionsForRole } from '@/config/permissions.config';
+import { useLoginMutation, useForgotPasswordMutation, useResetPasswordMutation, useLogoutMutation } from '@/store/api/authApi';
+import { setSession, removeSession } from '@/store/slices/authSlice';
+import { useAppDispatch } from '@/store/store';
 
 interface AuthContextType {
   user: AdminUser | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password: string, rememberMe?: boolean) => Promise<void>;
+  login: (email: string, password: string, rememberMe?: boolean) => Promise<AdminUser>;
   logout: () => void;
   signup: (email: string, password: string, name: string) => Promise<void>;
   forgotPassword: (email: string) => Promise<void>;
@@ -59,6 +63,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AdminUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // RTK Query hooks
+  const [loginMutation] = useLoginMutation();
+  const [forgotPasswordMutation] = useForgotPasswordMutation();
+  const [resetPasswordMutation] = useResetPasswordMutation();
+  const [logoutMutation] = useLogoutMutation();
+  const dispatch = useAppDispatch();
+
   // Load user from localStorage on mount
   useEffect(() => {
     const loadStoredAuth = () => {
@@ -89,31 +100,73 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [user]);
 
-  const login = async (email: string, _password: string, rememberMe = false) => {
-    // Mock login - determine admin type based on email
-    await new Promise((resolve) => setTimeout(resolve, 800));
+  const login = async (email: string, password: string, rememberMe = false): Promise<AdminUser> => {
+    try {
+      // Call the real login API
+      // Response contains access_token and user object
+      const response = await loginMutation({ email, password }).unwrap();
 
-    let mockUser: AdminUser;
+      // Map the API response structure to our app's UserInfo type
+      const userInfoWithRole: UserInfo = {
+        ...response.user,
+        // Ensure role is set if missing in API, though API usually sends it
+        // If API doesn't send role for owner, we might need to deduce it or keep it as is
+      };
 
-    if (email.includes('owner') || email.includes('super')) {
-      mockUser = MOCK_USERS.owner;
-    } else if (email.includes('agency')) {
-      mockUser = MOCK_USERS.agency;
-    } else {
-      mockUser = MOCK_USERS.brand;
+      // Store session data in Redux (store token manually as requested)
+      dispatch(setSession({
+        token: response.access_token,
+        userInfo: userInfoWithRole,
+        permissions: [], // Default empty permissions for now
+      }));
+
+      // Store remember me preference
+      localStorage.setItem(REMEMBER_ME_KEY, rememberMe.toString());
+
+      // Map TenantType to AdminType: 
+      // internal -> owner
+      // business -> brand
+      // agency -> agency
+      let adminType: AdminType = 'owner';
+      const tenantType = response.user.tenantType;
+
+      if (tenantType === TenantType.BUSINESS) adminType = 'brand';
+      else if (tenantType === TenantType.AGENCY) adminType = 'agency';
+      else if (tenantType === TenantType.INTERNAL) adminType = 'owner';
+
+      const adminUser: AdminUser = {
+        id: response.user.id,
+        email: response.user.email,
+        name: response.user.name || '',
+        adminType: adminType,
+        role: 'owner' as AdminRole, // This might need to be dynamic too based on API types if available
+        permissions: [],
+        brandId: undefined,
+        agencyId: undefined,
+      };
+
+      setUser(adminUser);
+      return adminUser;
+    } catch (error) {
+      console.error('Login failed:', error);
+      throw error;
     }
-
-    // Store remember me preference
-    localStorage.setItem(REMEMBER_ME_KEY, rememberMe.toString());
-
-    setUser({ ...mockUser, email });
   };
 
-  const logout = useCallback(() => {
-    setUser(null);
-    localStorage.removeItem(AUTH_STORAGE_KEY);
-    localStorage.removeItem(REMEMBER_ME_KEY);
-  }, []);
+  const logout = useCallback(async () => {
+    try {
+      // Call backend to clear HTTP-only cookies
+      await logoutMutation().unwrap();
+    } catch (error) {
+      console.error('Logout failed:', error);
+    } finally {
+      // Clear local state regardless of API call result
+      setUser(null);
+      dispatch(removeSession());
+      localStorage.removeItem(AUTH_STORAGE_KEY);
+      localStorage.removeItem(REMEMBER_ME_KEY);
+    }
+  }, [dispatch, logoutMutation]);
 
   const signup = async (email: string, _password: string, name: string) => {
     // Mock signup - default to brand admin
@@ -131,17 +184,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const forgotPassword = async (email: string) => {
-    // Mock forgot password - simulate sending reset email
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    console.log('Password reset email sent to:', email);
-    // In real implementation, this would call an API endpoint
+    try {
+      // Call the real forgot password API
+      await forgotPasswordMutation({ email }).unwrap();
+      // Success message will be shown by the global toast handler in api.ts
+    } catch (error) {
+      console.error('Forgot password failed:', error);
+      throw error;
+    }
   };
 
   const resetPassword = async (token: string, newPassword: string) => {
-    // Mock reset password - simulate password reset
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    console.log('Password reset with token:', token, 'New password:', newPassword);
-    // In real implementation, this would call an API endpoint
+    try {
+      // Call the real reset password API
+      await resetPasswordMutation({ token, newPassword }).unwrap();
+      // Success message will be shown by the global toast handler in api.ts
+    } catch (error) {
+      console.error('Reset password failed:', error);
+      throw error;
+    }
   };
 
   const switchContext = useCallback((brandId?: string, agencyId?: string) => {

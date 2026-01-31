@@ -1,7 +1,7 @@
 import { createApi, fetchBaseQuery, BaseQueryFn, FetchArgs, FetchBaseQueryError } from '@reduxjs/toolkit/query/react';
 import { Mutex } from 'async-mutex';
 import { toast } from 'sonner';
-import { TOKEN, REFRESH_TOKEN, API_BASE_URL } from '@/utils/constants';
+import { API_BASE_URL, TOKEN, REFRESH_TOKEN } from '@/utils/constants';
 
 // Create a mutex for token refresh to prevent race conditions
 const mutex = new Mutex();
@@ -11,10 +11,12 @@ interface CustomExtraOptions {
   skipToast?: boolean;
 }
 
-// Base query with auth headers
+// Base query with credentials for cookie-based auth (hybrid approach)
 const baseQuery = fetchBaseQuery({
   baseUrl: API_BASE_URL,
+  credentials: 'include', // Send cookies if available
   prepareHeaders: (headers) => {
+    // Check for token in localStorage (manual override)
     const token = localStorage.getItem(TOKEN);
     if (token) {
       headers.set('Authorization', `Bearer ${token}`);
@@ -41,39 +43,29 @@ const baseQueryWithReauth: BaseQueryFn<
       const release = await mutex.acquire();
       
       try {
-        const refreshToken = localStorage.getItem(REFRESH_TOKEN);
-        
-        if (refreshToken) {
-          // Try to get a new token
-          const refreshResult = await baseQuery(
-            {
-              url: '/auth/refresh',
-              method: 'POST',
-              body: { refreshToken },
-            },
+        // Try to refresh the token using HTTP-only cookie
+        // Backend reads refreshToken from cookie and sets new accessToken cookie
+        const refreshResult = await baseQuery(
+          {
+            url: '/auth/refresh',
+            method: 'POST',
+          },
+          api,
+          extraOptions
+        );
+
+        if (refreshResult.data) {
+          // Cookies are refreshed by backend automatically
+          // Just retry the initial query
+          result = await baseQuery(args, api, extraOptions);
+        } else {
+          // Refresh failed - logout user
+          // Call backend to clear cookies
+          await baseQuery(
+            { url: '/auth/logout', method: 'POST' },
             api,
             extraOptions
           );
-
-          if (refreshResult.data) {
-            // Store the new token
-            const { token, refreshToken: newRefreshToken } = refreshResult.data as {
-              token: string;
-              refreshToken: string;
-            };
-            localStorage.setItem(TOKEN, token);
-            localStorage.setItem(REFRESH_TOKEN, newRefreshToken);
-            
-            // Retry the initial query
-            result = await baseQuery(args, api, extraOptions);
-          } else {
-            // Refresh failed - logout user
-            localStorage.clear();
-            window.location.href = '/login';
-            toast.error('Session expired. Please login again.');
-          }
-        } else {
-          // No refresh token - logout user
           localStorage.clear();
           window.location.href = '/login';
           toast.error('Session expired. Please login again.');

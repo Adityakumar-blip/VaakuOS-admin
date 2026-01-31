@@ -62,6 +62,19 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     const root = document.documentElement;
     root.setAttribute('data-palette', palette);
     localStorage.setItem(STORAGE_KEYS.palette, palette);
+
+    const currentPalette = availablePalettes.find(p => p.id === palette);
+    if (currentPalette) {
+      root.style.setProperty('--brand-primary', currentPalette.hsl);
+
+      // Extract HSL values to calculate hover state (reduce lightness by 5%)
+      const [h, s, l] = currentPalette.hsl.split(' ');
+      if (h && s && l) {
+        const lightness = parseInt(l.replace('%', ''));
+        const hoverLightness = Math.max(0, lightness - 5);
+        root.style.setProperty('--primary-hover', `${h} ${s} ${hoverLightness}%`);
+      }
+    }
   }, [palette]);
 
   useEffect(() => {

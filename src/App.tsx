@@ -19,11 +19,8 @@ import ResetPassword from "@/pages/auth/reset-password";
 import ProfilePage from "@/pages/profile";
 import NotFound from "@/pages/NotFound";
 import { AutoRoutes } from "@/components/routing/AutoRoutes";
-
-// Brand Admin Pages (Auto-discovered)
-// Owner Admin Pages (Auto-discovered)
-// Agency Admin Pages (Auto-discovered)
-// Brand Admin Team Pages (Users & Roles) (Auto-discovered)
+import EnterOTP from "@/pages/auth/enter-otp";
+import CreatePassword from "@/pages/auth/create-password";
 
 const queryClient = new QueryClient();
 
@@ -43,6 +40,8 @@ const App = () => (
                     <Route path="/login" element={<Login />} />
                     <Route path="/signup" element={<Signup />} />
                     <Route path="/forgot-password" element={<ForgotPassword />} />
+                    <Route path="/enter-otp" element={<EnterOTP />} />
+                    <Route path="/create-password" element={<CreatePassword />} />
                     <Route path="/reset-password" element={<ResetPassword />} />
 
                     {/* Protected Routes */}

@@ -203,7 +203,8 @@ export function AppSidebar() {
               <NavLink
                 to={item.href}
                 className={cn(
-                  'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group relative',
+                  'flex items-center px-3 py-2.5 rounded-lg transition-colors group relative',
+                  isExpanded ? 'gap-3' : 'justify-center',
                   isActive
                     ? 'bg-sidebar-primary text-sidebar-primary-foreground'
                     : 'text-sidebar-muted hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'

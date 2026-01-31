@@ -1,11 +1,11 @@
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { 
-    ChevronLeftIcon, 
-    ChevronRightIcon, 
+import {
+    ChevronLeftIcon,
+    ChevronRightIcon,
     ChevronDownIcon,
     ChevronDoubleLeftIcon,
-    ChevronDoubleRightIcon 
+    ChevronDoubleRightIcon
 } from '@heroicons/react/24/outline';
 import * as HeroIcons from '@heroicons/react/24/outline';
 import { cn } from '@/lib/utils';
@@ -23,7 +23,7 @@ import {
 } from '@/components/ui/tooltip';
 
 // Map Lucide icon names to Heroicons names
-const ICON_MAP: Record<string, any> = {
+const ICON_MAP: Record<string, React.ComponentType<React.ComponentProps<'svg'>>> = {
     'LayoutDashboard': HeroIcons.Squares2X2Icon,
     'Users': HeroIcons.UsersIcon,
     'User': HeroIcons.UserIcon,
@@ -90,13 +90,13 @@ export function DynamicSidebar() {
     // Get icon component from string name
     const getIcon = (iconName: string): React.ReactNode => {
         // Try direct lookup first (using updated names in modules.config.ts)
-        let IconComponent = (HeroIcons as any)[iconName];
-        
+        let IconComponent = (HeroIcons as unknown as Record<string, React.ComponentType<React.ComponentProps<'svg'>>>)[iconName];
+
         // Fallback to ICON_MAP for any legacy names or special mappings
         if (!IconComponent) {
             IconComponent = ICON_MAP[iconName] || HeroIcons.QuestionMarkCircleIcon;
         }
-        
+
         return <IconComponent className="w-5 h-5" />;
     };
 
@@ -189,7 +189,8 @@ export function DynamicSidebar() {
             <NavLink
                 to={module.path}
                 className={cn(
-                    'flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group relative',
+                    'flex items-center px-3 py-2.5 rounded-lg transition-colors group relative',
+                    isExpanded ? 'gap-3' : 'justify-center',
                     isActive
                         ? 'bg-sidebar-primary text-sidebar-primary-foreground'
                         : 'text-sidebar-muted hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
@@ -237,7 +238,7 @@ export function DynamicSidebar() {
             >
                 {/* Logo & Admin Type */}
                 <div className="h-16 flex items-center justify-center border-b border-sidebar-border px-4">
-                    <div className="flex items-center gap-2 overflow-hidden">
+                    <div className={cn("flex items-center overflow-hidden", isExpanded ? "gap-2" : "justify-center")}>
                         <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold text-sm shrink-0">
                             {user?.adminType === 'brand' ? 'B' : user?.adminType === 'agency' ? 'A' : 'O'}
                         </div>
@@ -277,8 +278,8 @@ export function DynamicSidebar() {
                     <button
                         onClick={toggleCollapsed}
                         className={cn(
-                            "w-full flex items-center gap-3 p-2 rounded-lg text-sidebar-muted hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors group",
-                            !isExpanded && "justify-center"
+                            "w-full flex items-center p-2 rounded-lg text-sidebar-muted hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors group",
+                            isExpanded ? "gap-3" : "justify-center"
                         )}
                     >
                         <div className="shrink-0 flex items-center justify-center w-5 h-5">
