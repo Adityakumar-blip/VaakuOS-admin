@@ -46,8 +46,7 @@ export default function OwnerCreateUserPage() {
     });
 
     // Fetch available roles
-    const { data: rolesResponse } = useGetRolesQuery({});
-    const roles = rolesResponse?.data || [];
+    const { data: roles = [] } = useGetRolesQuery({});
 
     const [addUser] = useAddUserMutation();
     const [updateUser] = useUpdateUserMutation();
@@ -75,7 +74,7 @@ export default function OwnerCreateUserPage() {
                 name: formData.fullName,
                 email: formData.email,
                 roleId: formData.role,
-                status: formData.isActive ? 'active' : ('inactive' as 'inactive'),
+                // status: formData.isActive ? 'active' : ('inactive' as 'inactive'),
                 phone_number: formData.phone,
                 ...(formData.password ? { password: formData.password } : {}),
             };
