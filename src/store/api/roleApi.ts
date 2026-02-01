@@ -6,6 +6,7 @@ export interface Role {
     description?: string;
     permissions: string[];
     tenant_id?: string | null;
+    isSystem?: boolean;
     _count?: {
         user_roles: number;
     };
@@ -56,6 +57,19 @@ export const roleApi = api.injectEndpoints({
             invalidatesTags: [{ type: 'Role', id: 'LIST' }],
         }),
 
+        // Update existing role
+        updateRole: builder.mutation<Role, { id: string; data: Partial<Role> }>({
+            query: ({ id, data }) => ({
+                url: `/roles/${id}`,
+                method: 'PUT',
+                body: data,
+            }),
+            invalidatesTags: (result, error, { id }) => [
+                { type: 'Role', id: 'LIST' },
+                { type: 'Role', id },
+            ],
+        }),
+
         // Delete role
         deleteRole: builder.mutation<void, string>({
             query: (id) => ({
@@ -98,6 +112,7 @@ export const {
     useGetRoleByIdQuery,
     useLazyGetRoleByIdQuery,
     useAddRoleMutation,
+    useUpdateRoleMutation,
     useDeleteRoleMutation,
     useAssignRoleMutation,
     useUnassignRoleMutation,

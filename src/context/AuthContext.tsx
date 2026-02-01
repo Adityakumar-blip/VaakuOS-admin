@@ -109,15 +109,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Map the API response structure to our app's UserInfo type
       const userInfoWithRole: UserInfo = {
         ...response.user,
-        // Ensure role is set if missing in API, though API usually sends it
-        // If API doesn't send role for owner, we might need to deduce it or keep it as is
+        // API provides all necessary fields: id, email, name, tenantId, tenantType, roles, permissions, forcePasswordChange
       };
 
-      // Store session data in Redux (store token manually as requested)
+      // Store session data in Redux with actual permissions from API
       dispatch(setSession({
         token: response.access_token,
         userInfo: userInfoWithRole,
-        permissions: [], // Default empty permissions for now
+        permissions: response.user.permissions || [], // Use actual permissions from API
       }));
 
       // Store remember me preference
@@ -139,8 +138,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         email: response.user.email,
         name: response.user.name || '',
         adminType: adminType,
-        role: 'owner' as AdminRole, // This might need to be dynamic too based on API types if available
-        permissions: [],
+        role: (response.user.roles && response.user.roles.length > 0 ? response.user.roles[0].toLowerCase() : 'owner') as AdminRole,
+        permissions: response.user.permissions || [],
         brandId: undefined,
         agencyId: undefined,
       };

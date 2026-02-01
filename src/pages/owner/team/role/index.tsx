@@ -133,13 +133,14 @@ export default function OwnerRolePage() {
             }
         },
         {
-            accessorKey: "userCount",
-            header: () => <div className="text-center">Users</div>,
+            accessorKey: "permissions",
+            header: () => <div className="text-center">Permissions</div>,
             cell: ({ row }) => {
+                const permissionCount = row.original.permissions?.length || 0;
                 return (
                     <div className="text-center">
                         <Badge variant="outline" className="font-normal">
-                            {(row.original.userCount || 0)} users
+                            {permissionCount} permission{permissionCount !== 1 ? 's' : ''}
                         </Badge>
                     </div>
                 );
@@ -152,7 +153,7 @@ export default function OwnerRolePage() {
                 const role = row.original;
                 return (
                     <RowActions
-                        onEdit={() => navigate(`/owner/team/role/create?id=${role.id}&action=edit`)}
+                        onEdit={() => navigate(`/owner/team/role/create/${role.id}`)}
                         onDelete={!role.isSystem ? () => handleDeleteSingle(role.id) : undefined}
                     />
                 );

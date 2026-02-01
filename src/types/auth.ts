@@ -10,8 +10,11 @@ export interface UserInfo {
   id: string;
   email: string;
   name?: string;
-  role?: string;
+  tenantId: string;
   tenantType: TenantType;
+  roles: string[];
+  permissions: string[];
+  forcePasswordChange?: boolean;
   [key: string]: unknown; // Allow additional properties from API
 }
 
