@@ -24,6 +24,9 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 
+import vaakuos from "@/assets/white_full.png";
+
+
 interface NavItem {
   label: string;
   icon: React.ReactNode;
@@ -95,20 +98,18 @@ export function AppSidebar() {
         </button>
 
         {/* Logo */}
-        <div className="h-16 flex items-center justify-center border-b border-sidebar-border px-4">
-          <div className="flex items-center gap-2 overflow-hidden">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold text-sm shrink-0">
-              AP
-            </div>
-            <span
-              className={cn(
-                'font-semibold text-sidebar-foreground whitespace-nowrap transition-all duration-300',
-                isExpanded ? 'opacity-100' : 'opacity-0 w-0'
-              )}
-            >
-              Admin Panel
-            </span>
+     <div className="h-16 border-b border-sidebar-border flex items-center px-3 gap-2">
+          <div className="h-10 w-10 flex items-center justify-center rounded-xl bg-primary shadow-sm shrink-0 hover:scale-[1.02] transition-transform cursor-pointer">
+            <img src={vaakuos} alt="vaakuos logo" />
           </div>
+          <span
+            className={cn(
+              "text-lg font-semibold text-sidebar-foreground whitespace-nowrap transition-opacity duration-200",
+              collapsed ? "opacity-100" : "opacity-0 lg:w-0"
+            )}
+          >
+            VaakuOS
+          </span>
         </div>
 
         {/* Navigation */}
