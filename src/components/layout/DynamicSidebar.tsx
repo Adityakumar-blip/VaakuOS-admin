@@ -22,6 +22,9 @@ import {
     TooltipTrigger,
 } from '@/components/ui/tooltip';
 
+import vaakuos from "@/assets/white_full.png";
+
+
 // Map Lucide icon names to Heroicons names
 const ICON_MAP: Record<string, React.ComponentType<React.ComponentProps<'svg'>>> = {
     'LayoutDashboard': HeroIcons.Squares2X2Icon,
@@ -237,33 +240,19 @@ export function DynamicSidebar() {
                 )}
             >
                 {/* Logo & Admin Type */}
-                <div className="h-16 flex items-center justify-center border-b border-sidebar-border px-4">
-                    <div className={cn("flex items-center overflow-hidden", isExpanded ? "gap-2" : "justify-center")}>
-                        <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold text-sm shrink-0">
-                            {user?.adminType === 'brand' ? 'B' : user?.adminType === 'agency' ? 'A' : 'O'}
-                        </div>
-                        <div
-                            className={cn(
-                                'transition-all duration-300',
-                                isExpanded ? 'opacity-100' : 'opacity-0 w-0'
-                            )}
-                        >
-                            <div className="font-semibold text-sidebar-foreground whitespace-nowrap text-sm">
-                                {getAdminTypeLabel()}
-                            </div>
-                            {user?.brandName && (
-                                <div className="text-xs text-sidebar-muted truncate">
-                                    {user.brandName}
-                                </div>
-                            )}
-                            {user?.agencyName && (
-                                <div className="text-xs text-sidebar-muted truncate">
-                                    {user.agencyName}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
+               <div className="h-16 border-b border-sidebar-border flex items-center px-3 gap-2">
+          <div className="h-10 w-10 flex items-center justify-center rounded-xl bg-primary shadow-sm shrink-0 hover:scale-[1.02] transition-transform cursor-pointer">
+            <img src={vaakuos} alt="vaakuos logo" />
+          </div>
+          <span
+            className={cn(
+              "text-lg font-semibold text-sidebar-foreground whitespace-nowrap transition-opacity duration-200",
+              !collapsed ? "opacity-100" : "opacity-0 lg:w-0"
+            )}
+          >
+            VaakuOS
+          </span>
+        </div>
 
                 {/* Navigation */}
                 <nav className="flex-1 py-4 px-2 space-y-1 overflow-y-auto stealth-scroll">
