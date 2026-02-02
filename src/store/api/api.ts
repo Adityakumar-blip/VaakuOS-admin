@@ -114,6 +114,7 @@ export const api = createApi({
     'Designation',
     'Settings',
     'Masters',
+    'AutoResponse',
   ],
   endpoints: () => ({}),
 });

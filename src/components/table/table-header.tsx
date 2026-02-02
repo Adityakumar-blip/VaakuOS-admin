@@ -51,60 +51,63 @@ export function TableHeader({
 }: TableHeaderProps) {
     return (
         <div className="w-full mb-6">
-            <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
+            <div className="flex flex-col lg:flex-row gap-4 justify-between">
                 {/* Left: Show Entries */}
-                <div className="min-w-[200px]">
+                <div className="flex-shrink-0">
                     <ShowEntriesSelect value={entriesPerPage} onChange={onEntriesChange} />
                 </div>
 
-                {/* Right: Filter, Search, Delete, Action Button */}
-                <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center w-full sm:w-auto">
-                    {/* Filter Button */}
-                    {showFilter && children && (
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="outline" size="default" className="gap-2">
-                                    <Filter className="w-4 h-4" />
-                                    Filter
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-[300px]">
-                                {children}
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                    )}
-
-                    {/* Search Field */}
-                    <div className="relative w-full sm:w-[300px]">
+                {/* Right: Actions and Search */}
+                <div className="flex flex-col sm:flex-row gap-2 flex-1 lg:flex-initial lg:justify-end">
+                    {/* Search Field - Full width on mobile, fixed on desktop */}
+                    <div className="relative w-full sm:w-auto sm:min-w-[250px] lg:min-w-[300px] order-1 sm:order-2">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-4 h-4" />
                         <Input
                             placeholder={searchPlaceholder}
                             value={searchValue}
                             onChange={(e) => onSearchChange(e.target.value)}
-                            className="pl-10"
+                            className="pl-10 w-full"
                         />
                     </div>
 
-                    {/* Delete Button */}
-                    {showDelete && (
-                        <Button
-                            variant="destructive"
-                            onClick={onDelete}
-                            disabled={deleteDisabled}
-                            className="gap-2"
-                        >
-                            <Trash2 className="w-4 h-4" />
-                            Delete
-                        </Button>
-                    )}
+                    {/* Action Buttons Row */}
+                    <div className="flex gap-2 order-2 sm:order-1">
+                        {/* Filter Button */}
+                        {showFilter && children && (
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="outline" size="default" className="gap-2 flex-1 sm:flex-initial">
+                                        <Filter className="w-4 h-4" />
+                                        <span className="hidden sm:inline">Filter</span>
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-[300px]">
+                                    {children}
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        )}
 
-                    {/* Action Button */}
-                    {actionButton && (
-                        <Button onClick={actionButton.onClick} className="gap-2">
-                            {actionButton.icon}
-                            {actionButton.label}
-                        </Button>
-                    )}
+                        {/* Delete Button */}
+                        {showDelete && (
+                            <Button
+                                variant="destructive"
+                                onClick={onDelete}
+                                disabled={deleteDisabled}
+                                className="gap-2 flex-1 sm:flex-initial"
+                            >
+                                <Trash2 className="w-4 h-4" />
+                                <span className="hidden sm:inline">Delete</span>
+                            </Button>
+                        )}
+
+                        {/* Action Button */}
+                        {actionButton && (
+                            <Button onClick={actionButton.onClick} className="gap-2 flex-1 sm:flex-initial whitespace-nowrap">
+                                {actionButton.icon}
+                                <span className="hidden sm:inline">{actionButton.label}</span>
+                            </Button>
+                        )}
+                    </div>
                 </div>
             </div>
         </div>

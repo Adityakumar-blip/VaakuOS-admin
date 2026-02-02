@@ -11,7 +11,7 @@ import { useGetRoleByIdQuery, useAddRoleMutation, useUpdateRoleMutation } from '
 import { getPermissionGroupsByTenantType } from '@/constants/permissionGroups';
 import { Permission } from '@/types/permissions.enum';
 import { useToast } from '@/hooks/use-toast';
-import { Separator } from '@/components/ui/separator';
+import { cn } from '@/lib/utils';
 
 export default function OwnerRoleFormPage() {
     const navigate = useNavigate();
@@ -36,6 +36,9 @@ export default function OwnerRoleFormPage() {
     // Get permission groups for owner tenant type
     const groups = getPermissionGroupsByTenantType('owner');
 
+    // Active tab state
+    const [activeTab, setActiveTab] = useState(groups[0]?.id || '');
+
     // Populate form when role data is loaded (edit mode)
     useEffect(() => {
         if (role && isEditMode) {
@@ -52,18 +55,6 @@ export default function OwnerRoleFormPage() {
         } else {
             newPermissions.add(permission);
         }
-        setSelectedPermissions(newPermissions);
-    };
-
-    const handleGroupToggle = (groupPermissions: Permission[], allSelected: boolean) => {
-        const newPermissions = new Set(selectedPermissions);
-        groupPermissions.forEach(permission => {
-            if (allSelected) {
-                newPermissions.delete(permission);
-            } else {
-                newPermissions.add(permission);
-            }
-        });
         setSelectedPermissions(newPermissions);
     };
 
@@ -153,6 +144,7 @@ export default function OwnerRoleFormPage() {
     }
 
     const isLoading = isCreating || isUpdating;
+    const activeGroup = groups.find(g => g.id === activeTab);
 
     return (
         <div className="p-6 space-y-6">
@@ -203,66 +195,87 @@ export default function OwnerRoleFormPage() {
                 </CardContent>
             </Card>
 
-            <Card>
-                <CardHeader>
+            <Card className="h-[calc(100vh-20rem)]">
+                <CardHeader className="flex-shrink-0 pb-4">
                     <div className="flex items-center justify-between">
-                        <CardTitle>Permissions</CardTitle>
-                        <div className="flex gap-2">
-                            <Button variant="outline" size="sm" onClick={handleSelectAll}>
-                                Select All
-                            </Button>
-                            <Button variant="outline" size="sm" onClick={handleDeselectAll}>
-                                Deselect All
-                            </Button>
+                        <div>
+                            <CardTitle>Permissions</CardTitle>
+                            <p className="text-sm text-muted-foreground mt-1">
+                                Selected: {selectedPermissions.size} permission{selectedPermissions.size !== 1 ? 's' : ''}
+                            </p>
                         </div>
                     </div>
-                    <p className="text-sm text-muted-foreground">
-                        Selected: {selectedPermissions.size} permission{selectedPermissions.size !== 1 ? 's' : ''}
-                    </p>
                 </CardHeader>
-                <CardContent className="pb-6">
-                    <div className="space-y-6">
-                        {groups.map((group) => {
-                            const groupPermissions = group.permissions;
-                            const selectedCount = groupPermissions.filter(p => selectedPermissions.has(p)).length;
-                            const allSelected = selectedCount === groupPermissions.length;
-                            const someSelected = selectedCount > 0 && selectedCount < groupPermissions.length;
+                <CardContent className="pb-6 h-[calc(100%-6rem)]">
+                    <div className="flex gap-6 h-full">
+                        {/* Left Sidebar - Permission Categories (Scrollable) */}
+                        <div className="w-64 flex-shrink-0 space-y-1 overflow-y-auto pr-2">
+                            {groups.map((group) => {
+                                const groupPermissions = group.permissions;
+                                const selectedCount = groupPermissions.filter(p => selectedPermissions.has(p)).length;
+                                const isActive = activeTab === group.id;
 
-                            return (
-                                <div key={group.id} className="space-y-3">
-                                    <div className="flex items-start justify-between">
-                                        <div className="space-y-1">
-                                            <div className="flex items-center gap-2">
+                                return (
+                                    <button
+                                        key={group.id}
+                                        onClick={() => setActiveTab(group.id)}
+                                        className={cn(
+                                            "w-full text-left px-4 py-3 rounded-lg transition-colors",
+                                            "flex items-center justify-between group",
+                                            isActive
+                                                ? "bg-primary text-primary-foreground"
+                                                : "hover:bg-muted text-muted-foreground hover:text-foreground"
+                                        )}
+                                    >
+                                        <span className="font-medium">{group.label}</span>
+                                        <span className={cn(
+                                            "text-xs px-2 py-0.5 rounded-full",
+                                            isActive
+                                                ? "bg-primary-foreground/20 text-primary-foreground"
+                                                : "bg-muted text-muted-foreground group-hover:bg-muted-foreground/20"
+                                        )}>
+                                            {selectedCount}/{groupPermissions.length}
+                                        </span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+
+                        {/* Right Content - Permission Checkboxes (Fixed, No Scroll) */}
+                        <div className="flex-1 flex flex-col h-full">
+                            {activeGroup && (
+                                <>
+                                    <div className="flex items-start justify-between mb-4 flex-shrink-0">
+                                        <div className="flex-1">
+                                            <div className="flex items-center gap-3 mb-1">
                                                 <Checkbox
-                                                    id={`group-${group.id}`}
-                                                    checked={allSelected}
-                                                    ref={(el) => {
-                                                        if (el) {
-                                                            const input = el.querySelector('input');
-                                                            if (input) {
-                                                                input.indeterminate = someSelected;
+                                                    id={`select-all-${activeGroup.id}`}
+                                                    checked={activeGroup.permissions.every(p => selectedPermissions.has(p))}
+                                                    onCheckedChange={() => {
+                                                        const newPermissions = new Set(selectedPermissions);
+                                                        const allSelected = activeGroup.permissions.every(p => selectedPermissions.has(p));
+
+                                                        activeGroup.permissions.forEach(permission => {
+                                                            if (allSelected) {
+                                                                newPermissions.delete(permission);
+                                                            } else {
+                                                                newPermissions.add(permission);
                                                             }
-                                                        }
+                                                        });
+                                                        setSelectedPermissions(newPermissions);
                                                     }}
-                                                    onCheckedChange={() => handleGroupToggle(groupPermissions, allSelected)}
                                                 />
-                                                <Label
-                                                    htmlFor={`group-${group.id}`}
-                                                    className="text-base font-semibold cursor-pointer"
-                                                >
-                                                    {group.label}
+                                                <Label htmlFor={`select-all-${activeGroup.id}`} className="text-lg font-semibold cursor-pointer">
+                                                    {activeGroup.label}
                                                 </Label>
-                                                <span className="text-xs text-muted-foreground">
-                                                    ({selectedCount}/{groupPermissions.length})
-                                                </span>
                                             </div>
-                                            <p className="text-sm text-muted-foreground ml-6">{group.description}</p>
+                                            <p className="text-sm text-muted-foreground ml-9">{activeGroup.description}</p>
                                         </div>
                                     </div>
 
-                                    <div className="ml-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                                        {groupPermissions.map((permission) => (
-                                            <div key={permission} className="flex items-center space-x-2">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 content-start">
+                                        {activeGroup.permissions.map((permission) => (
+                                            <div key={permission} className="flex items-center space-x-3 p-3 rounded-lg border hover:bg-muted/50 transition-colors">
                                                 <Checkbox
                                                     id={permission}
                                                     checked={selectedPermissions.has(permission)}
@@ -270,18 +283,16 @@ export default function OwnerRoleFormPage() {
                                                 />
                                                 <Label
                                                     htmlFor={permission}
-                                                    className="text-sm cursor-pointer font-normal"
+                                                    className="text-sm cursor-pointer font-normal flex-1"
                                                 >
                                                     {permission.split(':')[1]?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                                                 </Label>
                                             </div>
                                         ))}
                                     </div>
-
-                                    <Separator />
-                                </div>
-                            );
-                        })}
+                                </>
+                            )}
+                        </div>
                     </div>
                 </CardContent>
             </Card>
