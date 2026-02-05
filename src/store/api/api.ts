@@ -55,6 +55,12 @@ const baseQueryWithReauth: BaseQueryFn<
         );
 
         if (refreshResult.data) {
+          // Update the token in localStorage so the retry picks it up
+          const refreshData = refreshResult.data as { access_token?: string };
+          if (refreshData.access_token) {
+             localStorage.setItem(TOKEN, refreshData.access_token);
+          }
+
           // Cookies are refreshed by backend automatically
           // Just retry the initial query
           result = await baseQuery(args, api, extraOptions);
@@ -67,8 +73,11 @@ const baseQueryWithReauth: BaseQueryFn<
             extraOptions
           );
           localStorage.clear();
-          window.location.href = '/login';
-          toast.error('Session expired. Please login again.');
+          
+          if (window.location.pathname !== '/login') {
+             window.location.href = '/login';
+             toast.error('Session expired. Please login again.');
+          }
         }
       } finally {
         // Release the mutex

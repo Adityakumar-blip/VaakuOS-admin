@@ -257,6 +257,29 @@ export const OWNER_MODULES: ModuleConfig[] = [
     path: "/owner/master",
     icon: "ServerIcon",
     adminTypes: ["owner"],
+    children: [
+      {
+        id: "plan-features",
+        name: "Plan Features",
+        path: "/owner/master/plan-features",
+        icon: "BoltIcon",
+        adminTypes: ["owner"],
+      },
+      {
+        id: "faq-categories",
+        name: "FAQ Categories",
+        path: "/owner/master/faq-categories",
+        icon: "QuestionMarkCircleIcon",
+        adminTypes: ["owner"],
+      },
+      {
+        id: "integrations",
+        name: "Integrations",
+        path: "/owner/master/integrations",
+        icon: "ArrowsRightLeftIcon",
+        adminTypes: ["owner"],
+      },
+    ],
   },
   {
     id: "features",

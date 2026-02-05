@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,20 +12,66 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Calendar } from '@/components/ui/calendar';
-import {
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-} from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
-import { CalendarIcon, Plus, GripVertical, X, ArrowLeft } from 'lucide-react';
+import { X, ArrowLeft, Loader2, Edit, GripVertical } from 'lucide-react';
+import {
+    useGetMastersQuery,
+    useGetMasterByIdQuery,
+    useAddMasterMutation,
+    useUpdateMasterMutation,
+} from '@/store/api/mastersApi';
+import { z } from 'zod';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+
+const SUBSCRIPTIONS_URL = '/subscriptions/plans';
+const FEATURES_DROPDOWN_URL = '/plan-features/features-dropdown';
+
+interface FeatureOption {
+    id: string;
+    name: string;
+    code: string;
+    type: 'string' | 'number' | 'boolean';
+}
 
 interface DynamicField {
-    id: string;
-    value: string;
+    id: string; // unique internal id for list rendering
+    code: string;
+    value: string | number | boolean;
+    type: 'string' | 'number' | 'boolean';
+    name: string; // Display name
 }
+
+
+interface Subscription {
+    name: string;
+    subtitle: string;
+    description: string;
+    amount: string | number;
+    is_yearly?: boolean;
+    yearly_discount?: number;
+    features?: Record<string, string | number | boolean>;
+}
+
+// Zod Schema
+const subscriptionSchema = z.object({
+    name: z.string().min(1, 'Plan name is required'),
+    subtitle: z.string().min(1, 'Subtitle is required'),
+    description: z.string().min(1, 'Description is required'),
+    amount: z.coerce.number().min(1, 'Amount must be at least 1 cent'),
+    is_yearly: z.boolean().default(false),
+    yearly_discount: z.coerce.number().min(0).max(100).optional(),
+}).refine((data) => {
+    if (data.is_yearly && (data.yearly_discount === undefined || data.yearly_discount === null || isNaN(data.yearly_discount))) {
+        return false;
+    }
+    return true;
+}, {
+    message: "Yearly discount is required for yearly plans",
+    path: ["yearly_discount"],
+});
+
+type SubscriptionFormValues = z.infer<typeof subscriptionSchema>;
 
 export default function SubscriptionCreatePage() {
     const navigate = useNavigate();
@@ -35,34 +81,125 @@ export default function SubscriptionCreatePage() {
     const isView = action === 'view';
     const isEdit = action === 'edit';
 
-    // Form state
-    const [title, setTitle] = useState('');
-    const [subtitle, setSubtitle] = useState('');
-    const [description, setDescription] = useState('');
-    const [startDate, setStartDate] = useState<Date>();
-    const [endDate, setEndDate] = useState<Date>();
-    const [status, setStatus] = useState<string>('active');
-    const [dynamicFields, setDynamicFields] = useState<DynamicField[]>([
-        { id: '1', value: '' }
-    ]);
+    // React Hook Form
+    const {
+        register,
+        handleSubmit: handleFormSubmit,
+        control,
+        setValue,
+        watch,
+        reset,
+        formState: { errors },
+    } = useForm<SubscriptionFormValues>({
+        resolver: zodResolver(subscriptionSchema),
+        defaultValues: {
+            name: '',
+            subtitle: '',
+            description: '',
+            amount: 0,
+            is_yearly: false,
+            yearly_discount: 0,
+        },
+    });
 
-    // Drag state
+    const is_yearly = watch('is_yearly');
+
+    // Dynamic Features State (kept separate for now as it involves complex UI/logic)
+    const [dynamicFields, setDynamicFields] = useState<DynamicField[]>([]);
     const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
 
-    const handleAddField = () => {
-        setDynamicFields([...dynamicFields, { id: Date.now().toString(), value: '' }]);
+    // Features Dropdown Data
+    const { data: featuresCommonData } = useGetMastersQuery({
+        url: FEATURES_DROPDOWN_URL,
+    });
+
+    // Ensure featuresData is an array
+    const featuresData = useMemo(() => {
+        if (Array.isArray(featuresCommonData)) return featuresCommonData as FeatureOption[];
+        return (featuresCommonData as { data: FeatureOption[] })?.data || [];
+    }, [featuresCommonData]);
+
+    // Fetch existing subscription data if edit/view
+    const { data: existingSubscriptionData, isLoading: isLoadingSubscription } = useGetMasterByIdQuery({
+        url: SUBSCRIPTIONS_URL,
+        id: id || '',
+    }, { skip: !id });
+
+    // Mutation hooks
+    const [addSubscription, { isLoading: isAdding }] = useAddMasterMutation();
+    const [updateSubscription, { isLoading: isUpdating }] = useUpdateMasterMutation();
+
+    // Populate form on load
+    useEffect(() => {
+        if (existingSubscriptionData && (isEdit || isView)) {
+            // Fix: Check if data is nested in a 'data' property or direct
+            const subscriptionData = (existingSubscriptionData as { data: Subscription }).data || (existingSubscriptionData as Subscription);
+
+            reset({
+                name: subscriptionData.name || '',
+                subtitle: subscriptionData.subtitle || '',
+                description: subscriptionData.description || '',
+                amount: Number(subscriptionData.amount) || 0,
+                is_yearly: subscriptionData.is_yearly || false,
+                yearly_discount: subscriptionData.yearly_discount || 0,
+            });
+
+            // Map existing features to dynamicFields
+            if (subscriptionData.features && featuresData.length > 0) {
+                const mappedFields: DynamicField[] = [];
+                Object.entries(subscriptionData.features).forEach(([code, value]) => {
+                    const featureDef = featuresData.find(f => f.code === code);
+                    if (featureDef) {
+                        mappedFields.push({
+                            id: Date.now().toString() + Math.random(),
+                            code: featureDef.code,
+                            name: featureDef.name,
+                            type: featureDef.type,
+                            value: value as string | number | boolean
+                        });
+                    }
+                });
+                setDynamicFields(mappedFields);
+            }
+        }
+    }, [existingSubscriptionData, isEdit, isView, featuresData, reset]);
+
+
+    const handleAddFeature = (featureCode: string) => {
+        if (!featureCode) return;
+        const featureDef = featuresData.find(f => f.code === featureCode);
+        if (featureDef) {
+            // Check if already added
+            if (dynamicFields.some(f => f.code === featureCode)) {
+                // Optionally show toast: already exists
+                return;
+            }
+
+            let initialValue: string | number | boolean = '';
+            if (featureDef.type === 'boolean') initialValue = true;
+            if (featureDef.type === 'number') initialValue = 0;
+
+            setDynamicFields([...dynamicFields, {
+                id: Date.now().toString() + Math.random(),
+                code: featureDef.code,
+                name: featureDef.name,
+                type: featureDef.type,
+                value: initialValue
+            }]);
+        }
     };
 
     const handleRemoveField = (id: string) => {
         setDynamicFields(dynamicFields.filter(field => field.id !== id));
     };
 
-    const handleFieldChange = (id: string, value: string) => {
+    const handleFieldChange = (id: string, value: string | number | boolean) => {
         setDynamicFields(dynamicFields.map(field =>
             field.id === id ? { ...field, value } : field
         ));
     };
 
+    // Drag and drop handlers
     const handleDragStart = (index: number) => {
         setDraggedIndex(index);
     };
@@ -84,69 +221,96 @@ export default function SubscriptionCreatePage() {
         setDraggedIndex(null);
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
+    const onSubmit = async (data: SubscriptionFormValues) => {
+        // Construct features object
+        const featuresMap: Record<string, string | number | boolean> = {};
+        dynamicFields.forEach(field => {
+            let val = field.value;
+            if (field.type === 'number') val = Number(val);
+            featuresMap[field.code] = val;
+        });
+
         const payload = {
-            title,
-            subtitle,
-            description,
-            startDate: startDate?.toISOString(),
-            endDate: endDate?.toISOString(),
-            status,
-            dynamicFields: dynamicFields.map((field, index) => ({
-                order: index + 1,
-                value: field.value
-            }))
+            name: data.name,
+            subtitle: data.subtitle,
+            description: data.description,
+            amount: Number(data.amount),
+            is_yearly: data.is_yearly,
+            ...(data.is_yearly && { yearly_discount: Number(data.yearly_discount) }),
+            features: featuresMap
         };
-        console.log('Subscription Payload:', payload);
-        navigate('/owner/subscription');
+
+        try {
+            if (isEdit && id) {
+                await updateSubscription({ url: SUBSCRIPTIONS_URL, id, data: payload }).unwrap();
+            } else {
+                await addSubscription({ url: SUBSCRIPTIONS_URL, data: payload }).unwrap();
+            }
+            navigate('/owner/subscription');
+        } catch (error) {
+            console.error('Failed to save subscription:', error);
+        }
     };
+
+    if ((isEdit || isView) && isLoadingSubscription) {
+        return <div className="flex justify-center p-10"><Loader2 className="animate-spin" /></div>;
+    }
+
+    const availableFeatures = featuresData.filter(f => !dynamicFields.some(df => df.code === f.code));
 
     return (
         <div className="space-y-6 pt-4">
             {/* Header */}
-            <div className="flex items-center gap-4">
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => navigate('/owner/subscription')}
-                >
-                    <ArrowLeft size={20} />
-                </Button>
-                <div>
-                    <h1 className="text-2xl font-semibold text-foreground">
-                        {isView ? 'View' : isEdit ? 'Edit' : 'Create'} Subscription
-                    </h1>
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => navigate('/owner/subscription')}
+                    >
+                        <ArrowLeft size={20} />
+                    </Button>
+                    <div>
+                        <h1 className="text-2xl font-semibold text-foreground">
+                            {isView ? 'View' : isEdit ? 'Edit' : 'Create'} Plan
+                        </h1>
+                    </div>
                 </div>
+                {isView && (
+                    <Button onClick={() => navigate(`/owner/subscription/create?id=${id}&action=edit`)}>
+                        <Edit size={16} className="mr-2" />
+                        Edit Subscription
+                    </Button>
+                )}
             </div>
 
             {/* Form */}
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleFormSubmit(onSubmit)} className="space-y-6">
                 <div className="bg-card border border-border rounded-lg p-6 space-y-6">
-                    {/* Title */}
-                    <div className="space-y-2">
-                        <Label htmlFor="title">Title *</Label>
-                        <Input
-                            id="title"
-                            value={title}
-                            onChange={(e) => setTitle(e.target.value)}
-                            placeholder="Enter subscription title"
-                            disabled={isView}
-                            required
-                        />
-                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {/* Name */}
+                        <div className="space-y-2">
+                            <Label htmlFor="name">Plan Name *</Label>
+                            <Input
+                                id="name"
+                                {...register('name')}
+                                placeholder="e.g. Pro Monthly Plan"
+                                disabled={isView}
+                            />
+                            {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
+                        </div>
 
-                    {/* Subtitle */}
-                    <div className="space-y-2">
-                        <Label htmlFor="subtitle">Subtitle *</Label>
-                        <Input
-                            id="subtitle"
-                            value={subtitle}
-                            onChange={(e) => setSubtitle(e.target.value)}
-                            placeholder="Enter subscription subtitle"
-                            disabled={isView}
-                            required
-                        />
+                        {/* Subtitle */}
+                        <div className="space-y-2">
+                            <Label htmlFor="subtitle">Subtitle *</Label>
+                            <Input
+                                id="subtitle"
+                                {...register('subtitle')}
+                                placeholder="e.g. Best for growing teams"
+                                disabled={isView}
+                            />
+                            {errors.subtitle && <p className="text-sm text-destructive">{errors.subtitle.message}</p>}
+                        </div>
                     </div>
 
                     {/* Description */}
@@ -154,115 +318,95 @@ export default function SubscriptionCreatePage() {
                         <Label htmlFor="description">Description *</Label>
                         <Textarea
                             id="description"
-                            value={description}
-                            onChange={(e) => setDescription(e.target.value)}
-                            placeholder="Enter subscription description"
+                            {...register('description')}
+                            placeholder="Detailed description of the plan"
                             disabled={isView}
                             rows={4}
-                            required
                         />
+                        {errors.description && <p className="text-sm text-destructive">{errors.description.message}</p>}
                     </div>
 
-                    {/* Date Range */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {/* Start Date */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+                        {/* Amount */}
                         <div className="space-y-2">
-                            <Label>Start Date *</Label>
-                            <Popover>
-                                <PopoverTrigger asChild>
-                                    <Button
-                                        variant="outline"
-                                        className={cn(
-                                            "w-full justify-start text-left font-normal",
-                                            !startDate && "text-muted-foreground"
-                                        )}
-                                        disabled={isView}
-                                    >
-                                        <CalendarIcon className="mr-2 h-4 w-4" />
-                                        {startDate ? format(startDate, "PPP") : "Pick a date"}
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0">
-                                    <Calendar
-                                        mode="single"
-                                        selected={startDate}
-                                        onSelect={setStartDate}
-                                        initialFocus
-                                    />
-                                </PopoverContent>
-                            </Popover>
-                        </div>
-
-                        {/* End Date */}
-                        <div className="space-y-2">
-                            <Label>End Date *</Label>
-                            <Popover>
-                                <PopoverTrigger asChild>
-                                    <Button
-                                        variant="outline"
-                                        className={cn(
-                                            "w-full justify-start text-left font-normal",
-                                            !endDate && "text-muted-foreground"
-                                        )}
-                                        disabled={isView}
-                                    >
-                                        <CalendarIcon className="mr-2 h-4 w-4" />
-                                        {endDate ? format(endDate, "PPP") : "Pick a date"}
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0">
-                                    <Calendar
-                                        mode="single"
-                                        selected={endDate}
-                                        onSelect={setEndDate}
-                                        initialFocus
-                                    />
-                                </PopoverContent>
-                            </Popover>
-                        </div>
-                    </div>
-
-                    {/* Status */}
-                    <div className="space-y-2">
-                        <Label htmlFor="status">Status</Label>
-                        <div className="flex items-center gap-3 p-3 border border-border rounded-lg bg-muted/30">
-                            <Switch
-                                id="status"
-                                checked={status === 'active'}
-                                onCheckedChange={(checked) => setStatus(checked ? 'active' : 'inactive')}
+                            <Label htmlFor="amount">Amount (in cents) *</Label>
+                            <Input
+                                id="amount"
+                                type="number"
+                                {...register('amount')}
+                                placeholder="e.g. 49900 for $499.00"
                                 disabled={isView}
                             />
-                            <div className="flex-1">
-                                <p className="text-sm font-medium">
-                                    {status === 'active' ? 'Active' : 'Inactive'}
-                                </p>
-                                <p className="text-xs text-muted-foreground">
-                                    {status === 'active'
-                                        ? 'Subscription is available for users'
-                                        : 'Subscription is disabled'}
-                                </p>
+                            {errors.amount && <p className="text-sm text-destructive">{errors.amount.message}</p>}
+                        </div>
+
+                        {/* Is Yearly & Discount */}
+                        <div className="space-y-4">
+                            <div className="flex items-center space-x-2 pt-8">
+                                <Controller
+                                    name="is_yearly"
+                                    control={control}
+                                    render={({ field }) => (
+                                        <Switch
+                                            id="is_yearly"
+                                            checked={field.value}
+                                            onCheckedChange={field.onChange}
+                                            disabled={isView}
+                                        />
+                                    )}
+                                />
+                                <Label htmlFor="is_yearly" className="font-medium cursor-pointer">Is Yearly Plan?</Label>
                             </div>
+
+                            {is_yearly && (
+                                <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                                    <Label htmlFor="yearly_discount">Yearly Discount (%) *</Label>
+                                    <Input
+                                        id="yearly_discount"
+                                        type="number"
+                                        {...register('yearly_discount')}
+                                        placeholder="0 - 100"
+                                        disabled={isView}
+                                    />
+                                    {errors.yearly_discount && <p className="text-sm text-destructive">{errors.yearly_discount.message}</p>}
+                                    <p className="text-xs text-muted-foreground">
+                                        Percentage discount for yearly subscription (0-100)
+                                    </p>
+                                </div>
+                            )}
                         </div>
                     </div>
 
-                    {/* Dynamic Fields */}
-                    <div className="space-y-4">
+                    {/* Dynamic Features */}
+                    <div className="space-y-4 pt-4 border-t">
                         <div className="flex items-center justify-between">
-                            <Label>Additional Fields</Label>
-                            {!isView && (
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={handleAddField}
-                                >
-                                    <Plus size={16} className="mr-2" />
-                                    Add Field
-                                </Button>
-                            )}
+                            <Label className="text-lg">Plan Features</Label>
                         </div>
 
-                        <div className="space-y-3">
+                        {!isView && (
+                            <div className="flex gap-2 items-end max-w-md">
+                                <div className="flex-1 space-y-2">
+                                    <Label>Add Feature</Label>
+                                    <Select onValueChange={handleAddFeature}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select a feature to add" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {availableFeatures.map(feature => (
+                                                <SelectItem key={feature.id} value={feature.code}>
+                                                    {feature.name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="space-y-4 mt-4">
+                            {dynamicFields.length === 0 && (
+                                <p className="text-sm text-muted-foreground italic">No features added yet.</p>
+                            )}
                             {dynamicFields.map((field, index) => (
                                 <div
                                     key={field.id}
@@ -271,30 +415,59 @@ export default function SubscriptionCreatePage() {
                                     onDragOver={(e) => handleDragOver(e, index)}
                                     onDragEnd={handleDragEnd}
                                     className={cn(
-                                        "flex items-center gap-2 p-3 bg-muted/50 rounded-lg border border-border",
-                                        !isView && "cursor-move hover:bg-muted transition-colors",
+                                        "flex items-center gap-4 p-4 bg-muted/30 rounded-lg border border-border transition-all",
+                                        !isView && "cursor-move hover:bg-muted",
                                         draggedIndex === index && "opacity-50"
                                     )}
                                 >
                                     {!isView && (
-                                        <GripVertical size={20} className="text-muted-foreground flex-shrink-0" />
+                                        <GripVertical size={20} className="text-muted-foreground flex-shrink-0 cursor-grab active:cursor-grabbing" />
                                     )}
-                                    <Input
-                                        value={field.value}
-                                        onChange={(e) => handleFieldChange(field.id, e.target.value)}
-                                        placeholder={`Field ${index + 1}`}
-                                        disabled={isView}
-                                        className="flex-1"
-                                    />
-                                    {!isView && dynamicFields.length > 1 && (
+
+                                    <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+                                        <div>
+                                            <Label className="text-muted-foreground">{field.name}</Label>
+                                            <p className="text-xs text-muted-foreground font-mono">{field.code}</p>
+                                        </div>
+
+                                        <div>
+                                            {field.type === 'boolean' ? (
+                                                <div className="flex items-center gap-2">
+                                                    <Switch
+                                                        checked={field.value as boolean}
+                                                        onCheckedChange={(checked) => handleFieldChange(field.id, checked)}
+                                                        disabled={isView}
+                                                    />
+                                                    <span className="text-sm">{field.value ? 'Enabled' : 'Disabled'}</span>
+                                                </div>
+                                            ) : field.type === 'number' ? (
+                                                <Input
+                                                    type="number"
+                                                    value={field.value as number}
+                                                    onChange={(e) => handleFieldChange(field.id, e.target.value)}
+                                                    placeholder="Enter number"
+                                                    disabled={isView}
+                                                />
+                                            ) : (
+                                                <Input
+                                                    value={field.value as string}
+                                                    onChange={(e) => handleFieldChange(field.id, e.target.value)}
+                                                    placeholder="Enter value"
+                                                    disabled={isView}
+                                                />
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {!isView && (
                                         <Button
                                             type="button"
                                             variant="ghost"
                                             size="icon"
                                             onClick={() => handleRemoveField(field.id)}
-                                            className="flex-shrink-0"
+                                            className="text-destructive hover:text-destructive"
                                         >
-                                            <X size={16} />
+                                            <X size={18} />
                                         </Button>
                                     )}
                                 </div>
@@ -313,8 +486,12 @@ export default function SubscriptionCreatePage() {
                         >
                             Cancel
                         </Button>
-                        <Button type="submit">
-                            {isEdit ? 'Update' : 'Create'} Subscription
+                        <Button type="submit" disabled={isAdding || isUpdating}>
+                            {isAdding || isUpdating ? (
+                                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</>
+                            ) : (
+                                isEdit ? 'Update Plan' : 'Create Plan'
+                            )}
                         </Button>
                     </div>
                 )}

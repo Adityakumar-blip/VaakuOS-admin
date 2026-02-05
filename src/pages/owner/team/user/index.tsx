@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePaginationState } from '@/hooks/usePaginationState';
+import { useSearch } from '@/hooks/useSearch';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -31,7 +32,9 @@ export default function OwnerUserPage() {
     const navigate = useNavigate();
 
     // Search state
-    const [search, setSearch] = useState('');
+    const { search, debouncedSearch, handleSearchChange, setSearch } = useSearch({
+        onSearchChange: () => setPageIndex(0),
+    });
 
     // Pagination state with URL persistence
     const { pageSize, pageIndex, setPageSize, setPageIndex } = usePaginationState({
@@ -41,7 +44,7 @@ export default function OwnerUserPage() {
 
     // Fetch users from API
     const { data: users = [], isLoading } = useGetUsersQuery({
-        search,
+        search: debouncedSearch,
     });
 
     // Selection state
@@ -59,10 +62,7 @@ export default function OwnerUserPage() {
     const [deleteUser] = useDeleteUserMutation();
     const [updateUser] = useUpdateUserMutation();
 
-    const handleSearchChange = (value: string) => {
-        setSearch(value);
-        setPageIndex(0);
-    };
+
 
     const handleDeleteClick = () => {
         setDeleteConfirmOpen(true);
@@ -105,7 +105,7 @@ export default function OwnerUserPage() {
     const handleConfirmStatusChange = async () => {
         try {
             await Promise.all(
-                usersToChangeStatus.map(user => 
+                usersToChangeStatus.map(user =>
                     updateUser({ id: user.id as string, data: { status: newStatus } }).unwrap()
                 )
             );
@@ -257,7 +257,7 @@ export default function OwnerUserPage() {
             label: "Download CSV",
             icon: <Download size={16} />,
             onClick: (users) => {
-                const csvContent = "data:text/csv;charset=utf-8," 
+                const csvContent = "data:text/csv;charset=utf-8,"
                     + "Name,Email,Role,Status\n"
                     + users.map(u => `${u.name},${u.email},${u.role},${u.status}`).join("\n");
                 const encodedUri = encodeURI(csvContent);

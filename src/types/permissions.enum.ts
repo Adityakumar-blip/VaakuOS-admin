@@ -127,8 +127,33 @@ export enum Permission {
   COUPONS_DELETE = 'coupons:delete',
 
   // ============================================================================
-  // MASTER DATA (Plans, Integrations, Features, FAQs - Owner)
+  // MASTER DATA (Owner)
   // ============================================================================
+  // Plan Features
+  PLAN_FEATURES_READ = 'plan_features:read',
+  PLAN_FEATURES_CREATE = 'plan_features:create',
+  PLAN_FEATURES_UPDATE = 'plan_features:update',
+  PLAN_FEATURES_DELETE = 'plan_features:delete',
+
+  // FAQ Categories
+  FAQ_CATEGORIES_READ = 'faq_categories:read',
+  FAQ_CATEGORIES_CREATE = 'faq_categories:create',
+  FAQ_CATEGORIES_UPDATE = 'faq_categories:update',
+  FAQ_CATEGORIES_DELETE = 'faq_categories:delete',
+
+  // Plans (Master Data)
+  PLANS_READ = 'plans:read',
+  PLANS_CREATE = 'plans:create',
+  PLANS_UPDATE = 'plans:update',
+  PLANS_DELETE = 'plans:delete',
+
+  // Integrations (Master Data)
+  INTEGRATIONS_MASTER_READ = 'integrations_master:read',
+  INTEGRATIONS_MASTER_CREATE = 'integrations_master:create',
+  INTEGRATIONS_MASTER_UPDATE = 'integrations_master:update',
+  INTEGRATIONS_MASTER_DELETE = 'integrations_master:delete',
+
+  // Legacy Master Data (deprecated - use granular permissions above)
   MASTER_DATA_READ = 'master_data:read',
   MASTER_DATA_MANAGE = 'master_data:manage',
   FEATURES_MANAGE = 'features:manage',

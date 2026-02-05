@@ -9,7 +9,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Loader2 } from 'lucide-react';
 
 interface ConfirmationDialogProps {
     open: boolean;
@@ -21,6 +21,7 @@ interface ConfirmationDialogProps {
     cancelText?: string;
     variant?: 'default' | 'destructive';
     disabled?: boolean;
+    isLoading?: boolean;
 }
 
 /**
@@ -49,10 +50,10 @@ export function ConfirmationDialog({
     cancelText = 'Cancel',
     variant = 'default',
     disabled = false,
+    isLoading = false,
 }: ConfirmationDialogProps) {
     const handleConfirm = () => {
         onConfirm();
-        onOpenChange(false);
     };
 
     return (
@@ -70,12 +71,16 @@ export function ConfirmationDialog({
                     <AlertDialogDescription>{description}</AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                    <AlertDialogCancel>{cancelText}</AlertDialogCancel>
+                    <AlertDialogCancel disabled={isLoading}>{cancelText}</AlertDialogCancel>
                     <AlertDialogAction
-                        onClick={handleConfirm}
-                        disabled={disabled}
+                        onClick={(e) => {
+                            e.preventDefault();
+                            handleConfirm();
+                        }}
+                        disabled={disabled || isLoading}
                         className={variant === 'destructive' ? 'bg-destructive hover:bg-destructive/90' : ''}
                     >
+                        {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         {confirmText}
                     </AlertDialogAction>
                 </AlertDialogFooter>

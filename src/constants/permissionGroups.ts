@@ -78,13 +78,47 @@ export const permissionGroups: PermissionGroup[] = [
     ],
   },
   {
-    id: 'master-data',
-    label: 'Master Data',
-    description: 'Manage plans, integrations, features, and FAQs',
+    id: 'plan-features',
+    label: 'Plan Features',
+    description: 'Manage plan feature configurations',
     permissions: [
-      Permission.MASTER_DATA_READ,
-      Permission.MASTER_DATA_MANAGE,
-      Permission.FEATURES_MANAGE,
+      Permission.PLAN_FEATURES_READ,
+      Permission.PLAN_FEATURES_CREATE,
+      Permission.PLAN_FEATURES_UPDATE,
+      Permission.PLAN_FEATURES_DELETE,
+    ],
+  },
+  {
+    id: 'faq-categories',
+    label: 'FAQ Categories',
+    description: 'Manage FAQ category classifications',
+    permissions: [
+      Permission.FAQ_CATEGORIES_READ,
+      Permission.FAQ_CATEGORIES_CREATE,
+      Permission.FAQ_CATEGORIES_UPDATE,
+      Permission.FAQ_CATEGORIES_DELETE,
+    ],
+  },
+  {
+    id: 'plans-master',
+    label: 'Plans (Master Data)',
+    description: 'Manage subscription plans master data',
+    permissions: [
+      Permission.PLANS_READ,
+      Permission.PLANS_CREATE,
+      Permission.PLANS_UPDATE,
+      Permission.PLANS_DELETE,
+    ],
+  },
+  {
+    id: 'integrations-master',
+    label: 'Integrations (Master Data)',
+    description: 'Manage integration types and configurations',
+    permissions: [
+      Permission.INTEGRATIONS_MASTER_READ,
+      Permission.INTEGRATIONS_MASTER_CREATE,
+      Permission.INTEGRATIONS_MASTER_UPDATE,
+      Permission.INTEGRATIONS_MASTER_DELETE,
     ],
   },
   {
@@ -289,12 +323,19 @@ export const permissionGroups: PermissionGroup[] = [
     ],
   },
   {
-    id: 'users-roles',
-    label: 'Users & Roles',
-    description: 'Manage users and role assignments',
+    id: 'team-users',
+    label: 'Team: Users',
+    description: 'Manage team members',
     permissions: [
       Permission.USERS_READ,
       Permission.USERS_MANAGE,
+    ],
+  },
+  {
+    id: 'team-roles',
+    label: 'Team: Roles',
+    description: 'Manage role assignments and permissions',
+    permissions: [
       Permission.ROLES_MANAGE,
     ],
   },
@@ -332,12 +373,25 @@ export const permissionGroups: PermissionGroup[] = [
  */
 export const getPermissionGroupsByTenantType = (tenantType: 'owner' | 'agency' | 'brand'): PermissionGroup[] => {
   const tenantSpecificGroups: Record<string, string[]> = {
-    owner: ['owner-dashboard', 'agencies', 'brands-global', 'owner-billing', 'system-config', 'coupons', 'master-data', 'monitoring', 'owner-team'],
+    owner: [
+      'owner-dashboard',
+      'agencies',
+      'brands-global',
+      'owner-billing',
+      'system-config',
+      'coupons',
+      'plan-features',
+      'faq-categories',
+      'plans-master',
+      'integrations-master',
+      'monitoring',
+      'owner-team'
+    ],
     agency: ['agency-dashboard', 'agency-brands', 'agency-team'],
     brand: ['brand-dashboard', 'whatsapp', 'brand-team', 'brand-billing', 'compliance', 'webhooks', 'brand-settings'],
   };
 
-  const commonGroupIds = ['contacts', 'campaigns', 'templates', 'inbox', 'automation', 'integrations', 'tenant-settings', 'users-roles', 'auto-response', 'subscriptions', 'ecommerce'];
+  const commonGroupIds = ['contacts', 'campaigns', 'templates', 'inbox', 'automation', 'integrations', 'tenant-settings', 'team-users', 'team-roles', 'auto-response', 'subscriptions', 'ecommerce'];
   const specificGroupIds = tenantSpecificGroups[tenantType] || [];
 
   return permissionGroups.filter(group => 

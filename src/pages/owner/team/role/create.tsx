@@ -12,6 +12,18 @@ import { getPermissionGroupsByTenantType } from '@/constants/permissionGroups';
 import { Permission } from '@/types/permissions.enum';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { z } from 'zod';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+
+// Zod Schema
+const roleSchema = z.object({
+    name: z.string().min(1, 'Role name is required'),
+    description: z.string().optional(),
+    permissions: z.array(z.string()).min(1, 'Please select at least one permission'),
+});
+
+type RoleFormValues = z.infer<typeof roleSchema>;
 
 export default function OwnerRoleFormPage() {
     const navigate = useNavigate();
@@ -29,9 +41,24 @@ export default function OwnerRoleFormPage() {
     const [addRole, { isLoading: isCreating }] = useAddRoleMutation();
     const [updateRole, { isLoading: isUpdating }] = useUpdateRoleMutation();
 
-    const [roleName, setRoleName] = useState('');
-    const [description, setDescription] = useState('');
-    const [selectedPermissions, setSelectedPermissions] = useState<Set<string>>(new Set());
+    // React Hook Form
+    const {
+        register,
+        handleSubmit: handleFormSubmit,
+        setValue,
+        watch,
+        reset,
+        formState: { errors },
+    } = useForm<RoleFormValues>({
+        resolver: zodResolver(roleSchema),
+        defaultValues: {
+            name: '',
+            description: '',
+            permissions: [],
+        },
+    });
+
+    const selectedPermissions = watch('permissions');
 
     // Get permission groups for owner tenant type
     const groups = getPermissionGroupsByTenantType('owner');
@@ -42,61 +69,33 @@ export default function OwnerRoleFormPage() {
     // Populate form when role data is loaded (edit mode)
     useEffect(() => {
         if (role && isEditMode) {
-            setRoleName(role.name);
-            setDescription(role.description || '');
-            setSelectedPermissions(new Set(role.permissions || []));
+            reset({
+                name: role.name,
+                description: role.description || '',
+                permissions: role.permissions || [],
+            });
         }
-    }, [role, isEditMode]);
+    }, [role, isEditMode, reset]);
 
     const handlePermissionToggle = (permission: Permission) => {
-        const newPermissions = new Set(selectedPermissions);
-        if (newPermissions.has(permission)) {
-            newPermissions.delete(permission);
+        const currentPermissions = new Set(selectedPermissions);
+        if (currentPermissions.has(permission)) {
+            currentPermissions.delete(permission);
         } else {
-            newPermissions.add(permission);
+            currentPermissions.add(permission);
         }
-        setSelectedPermissions(newPermissions);
+        setValue('permissions', Array.from(currentPermissions), { shouldValidate: true });
     };
 
-    const handleSelectAll = () => {
-        const allPermissions = new Set<string>();
-        groups.forEach(group => {
-            group.permissions.forEach(permission => {
-                allPermissions.add(permission);
-            });
-        });
-        setSelectedPermissions(allPermissions);
-    };
+    // Helper to check if a permission is selected (for UI)
+    const isPermissionSelected = (permission: string) => selectedPermissions.includes(permission);
 
-    const handleDeselectAll = () => {
-        setSelectedPermissions(new Set());
-    };
-
-    const handleSubmit = async () => {
-        // Validation
-        if (!roleName.trim()) {
-            toast({
-                title: 'Validation Error',
-                description: 'Role name is required',
-                variant: 'destructive',
-            });
-            return;
-        }
-
-        if (selectedPermissions.size === 0) {
-            toast({
-                title: 'Validation Error',
-                description: 'Please select at least one permission',
-                variant: 'destructive',
-            });
-            return;
-        }
-
+    const handleSubmit = async (data: RoleFormValues) => {
         try {
             const roleData = {
-                name: roleName,
-                description: description || undefined,
-                permissions: Array.from(selectedPermissions),
+                name: data.name,
+                description: data.description || undefined,
+                permissions: data.permissions,
             };
 
             if (isEditMode && id) {
@@ -161,7 +160,7 @@ export default function OwnerRoleFormPage() {
                     <Button variant="outline" onClick={() => navigate('/owner/team/role')}>
                         Cancel
                     </Button>
-                    <Button onClick={handleSubmit} disabled={isLoading}>
+                    <Button onClick={handleFormSubmit(handleSubmit)} disabled={isLoading}>
                         {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         {isEditMode ? 'Save Changes' : 'Create Role'}
                     </Button>
@@ -177,17 +176,16 @@ export default function OwnerRoleFormPage() {
                         <Input
                             id="name"
                             placeholder="Role name"
-                            value={roleName}
-                            onChange={(e) => setRoleName(e.target.value)}
+                            {...register('name')}
                         />
+                        {errors.name && <p className="text-sm text-destructive">{errors.name.message}</p>}
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="description">Description</Label>
                         <Textarea
                             id="description"
                             placeholder="Role description..."
-                            value={description}
-                            onChange={(e) => setDescription(e.target.value)}
+                            {...register('description')}
                             className="min-h-[38px] resize-none"
                             rows={1}
                         />
@@ -201,8 +199,9 @@ export default function OwnerRoleFormPage() {
                         <div>
                             <CardTitle>Permissions</CardTitle>
                             <p className="text-sm text-muted-foreground mt-1">
-                                Selected: {selectedPermissions.size} permission{selectedPermissions.size !== 1 ? 's' : ''}
+                                Selected: {selectedPermissions.length} permission{selectedPermissions.length !== 1 ? 's' : ''}
                             </p>
+                            {errors.permissions && <p className="text-sm text-destructive mt-1">{errors.permissions.message}</p>}
                         </div>
                     </div>
                 </CardHeader>
@@ -212,12 +211,13 @@ export default function OwnerRoleFormPage() {
                         <div className="w-64 flex-shrink-0 space-y-1 overflow-y-auto pr-2">
                             {groups.map((group) => {
                                 const groupPermissions = group.permissions;
-                                const selectedCount = groupPermissions.filter(p => selectedPermissions.has(p)).length;
+                                const selectedCount = groupPermissions.filter(p => isPermissionSelected(p)).length;
                                 const isActive = activeTab === group.id;
 
                                 return (
                                     <button
                                         key={group.id}
+                                        type="button"
                                         onClick={() => setActiveTab(group.id)}
                                         className={cn(
                                             "w-full text-left px-4 py-3 rounded-lg transition-colors",
@@ -250,10 +250,10 @@ export default function OwnerRoleFormPage() {
                                             <div className="flex items-center gap-3 mb-1">
                                                 <Checkbox
                                                     id={`select-all-${activeGroup.id}`}
-                                                    checked={activeGroup.permissions.every(p => selectedPermissions.has(p))}
+                                                    checked={activeGroup.permissions.every(p => isPermissionSelected(p))}
                                                     onCheckedChange={() => {
                                                         const newPermissions = new Set(selectedPermissions);
-                                                        const allSelected = activeGroup.permissions.every(p => selectedPermissions.has(p));
+                                                        const allSelected = activeGroup.permissions.every(p => isPermissionSelected(p));
 
                                                         activeGroup.permissions.forEach(permission => {
                                                             if (allSelected) {
@@ -262,7 +262,7 @@ export default function OwnerRoleFormPage() {
                                                                 newPermissions.add(permission);
                                                             }
                                                         });
-                                                        setSelectedPermissions(newPermissions);
+                                                        setValue('permissions', Array.from(newPermissions), { shouldValidate: true });
                                                     }}
                                                 />
                                                 <Label htmlFor={`select-all-${activeGroup.id}`} className="text-lg font-semibold cursor-pointer">
@@ -278,7 +278,7 @@ export default function OwnerRoleFormPage() {
                                             <div key={permission} className="flex items-center space-x-3 p-3 rounded-lg border hover:bg-muted/50 transition-colors">
                                                 <Checkbox
                                                     id={permission}
-                                                    checked={selectedPermissions.has(permission)}
+                                                    checked={isPermissionSelected(permission)}
                                                     onCheckedChange={() => handlePermissionToggle(permission)}
                                                 />
                                                 <Label

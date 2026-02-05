@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePaginationState } from '@/hooks/usePaginationState';
+import { useSearch } from '@/hooks/useSearch';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -17,7 +18,9 @@ export default function OwnerRolePage() {
     const navigate = useNavigate();
 
     // Search state
-    const [search, setSearch] = useState('');
+    const { search, debouncedSearch, handleSearchChange, setSearch } = useSearch({
+        onSearchChange: () => setPageIndex(0),
+    });
 
     // Pagination state with URL persistence
     const { pageSize, pageIndex, setPageSize, setPageIndex } = usePaginationState({
@@ -27,7 +30,7 @@ export default function OwnerRolePage() {
 
     // Fetch roles from API
     const { data: rolesData = [], isLoading } = useGetRolesQuery({
-        search,
+        search: debouncedSearch,
     });
 
     // Selection state
@@ -39,10 +42,6 @@ export default function OwnerRolePage() {
 
     const [deleteRole] = useDeleteRoleMutation();
 
-    const handleSearchChange = (value: string) => {
-        setSearch(value);
-        setPageIndex(0); // Reset to first page on search
-    };
 
     const handleDeleteClick = () => {
         setDeleteConfirmOpen(true);

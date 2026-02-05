@@ -79,6 +79,15 @@ export const mastersApi = api.injectEndpoints({
       }),
       invalidatesTags: (result, error, { url }) => [{ type: 'Masters', id: url }],
     }),
+
+    // Publish Master endpoint
+    publishMaster: builder.mutation<unknown, { url: string; id: string }>({
+      query: ({ url, id }) => ({
+        url: `${url}/${id}/publish`,
+        method: 'POST',
+      }),
+      invalidatesTags: (result, error, { url }) => [{ type: 'Masters', id: url }],
+    }),
   }),
 });
 
@@ -90,4 +99,5 @@ export const {
   useAddMasterMutation,
   useUpdateMasterMutation,
   useDeleteMasterMutation,
+  usePublishMasterMutation,
 } = mastersApi;
