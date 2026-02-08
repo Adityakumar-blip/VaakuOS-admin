@@ -4,7 +4,7 @@ export interface User {
     name: string;
     email: string;
     role: 'admin' | 'manager' | 'user';
-    status: 'active' | 'inactive';
+    is_active: boolean;
     phone?: string;
     createdAt: string;
 }
@@ -12,12 +12,12 @@ export interface User {
 const STORAGE_KEY = 'aura_users';
 
 const MOCK_USERS: User[] = [
-    { id: '11', name: 'Rocky', email: 'rocky@example.com', role: 'admin', status: 'active', createdAt: new Date().toISOString() },
-    { id: '22', name: 'Raj', email: 'raj@example.com', role: 'manager', status: 'active', createdAt: new Date().toISOString() },
-    { id: '33', name: 'Ravi', email: 'ravi@example.com', role: 'user', status: 'active', createdAt: new Date().toISOString() },
-    { id: '44', name: 'Bob Johnson', email: 'bob@example.com', role: 'user', status: 'active', createdAt: new Date().toISOString() },
-    { id: '55', name: 'Jane Smith', email: 'jane@example.com', role: 'manager', status: 'active', createdAt: new Date().toISOString() },
-    { id: '66', name: 'John Doe', email: 'john@example.com', role: 'admin', status: 'active', createdAt: new Date().toISOString() },
+    { id: '11', name: 'Rocky', email: 'rocky@example.com', role: 'admin', is_active: true, createdAt: new Date().toISOString() },
+    { id: '22', name: 'Raj', email: 'raj@example.com', role: 'manager', is_active: true, createdAt: new Date().toISOString() },
+    { id: '33', name: 'Ravi', email: 'ravi@example.com', role: 'user', is_active: true, createdAt: new Date().toISOString() },
+    { id: '44', name: 'Bob Johnson', email: 'bob@example.com', role: 'user', is_active: true, createdAt: new Date().toISOString() },
+    { id: '55', name: 'Jane Smith', email: 'jane@example.com', role: 'manager', is_active: true, createdAt: new Date().toISOString() },
+    { id: '66', name: 'John Doe', email: 'john@example.com', role: 'admin', is_active: true, createdAt: new Date().toISOString() },
 ];
 
 export const userService = {
@@ -67,7 +67,7 @@ export const userService = {
         const users = userService.getUsers();
         const filtered = users.filter(u => u.id !== id);
         if (filtered.length === users.length) return false;
-        
+
         localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
         return true;
     },

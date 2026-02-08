@@ -32,7 +32,7 @@ const getUserSchema = (isEditMode: boolean) => z.object({
         ? z.string().optional()
         : z.string().min(6, 'Password must be at least 6 characters'),
     phone: z.string().optional(),
-    isActive: z.boolean().default(true),
+    is_active: z.boolean().default(true),
     role: z.string().min(1, 'Role is required'),
 });
 
@@ -75,7 +75,7 @@ export default function OwnerCreateUserPage() {
             email: '',
             password: '',
             phone: '',
-            isActive: true,
+            is_active: true,
             role: '',
         },
     });
@@ -87,7 +87,7 @@ export default function OwnerCreateUserPage() {
                 email: user.email,
                 password: '', // Don't fill password
                 phone: user.phone_number || '',
-                isActive: user.status === 'active',
+                is_active: user.is_active,
                 role: user.user_roles?.[0]?.roles?.id || '',
             });
         }
@@ -99,7 +99,7 @@ export default function OwnerCreateUserPage() {
                 name: data.fullName,
                 email: data.email,
                 roleId: data.role,
-                status: (data.isActive ? 'active' : 'inactive') as 'active' | 'inactive',
+                is_active: data.is_active,
                 phone_number: data.phone,
                 ...(data.password ? { password: data.password } : {}),
             };
@@ -230,7 +230,7 @@ export default function OwnerCreateUserPage() {
                     <div className="pt-2">
                         <Controller
                             control={control}
-                            name="isActive"
+                            name="is_active"
                             render={({ field }) => (
                                 <StatusSwitch
                                     checked={field.value}

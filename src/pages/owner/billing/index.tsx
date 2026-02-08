@@ -5,8 +5,32 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CreditCard, DollarSign, ArrowUpRight, ArrowDownRight, Download, FileText } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
+import { useGetFinanceStatsQuery } from '@/store/api/financeApi';
+import { Loader2 } from 'lucide-react';
 
 const OwnerBilling = () => {
+    const { data: stats, isLoading, isError } = useGetFinanceStatsQuery();
+
+    const formatCurrency = (value: number, currency: string = 'INR') => {
+        return new Intl.NumberFormat('en-IN', {
+            style: 'currency',
+            currency: currency,
+            maximumFractionDigits: 0,
+        }).format(value);
+    };
+
+    const formatNumber = (value: number) => {
+        return new Intl.NumberFormat('en-IN').format(value);
+    };
+
+    if (isLoading) {
+        return (
+            <div className="flex h-[400px] items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+        );
+    }
+
     return (
         <div className="space-y-6">
             <div>
@@ -22,10 +46,11 @@ const OwnerBilling = () => {
                         <DollarSign className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">$45,231.89</div>
+                        <div className="text-2xl font-bold">{formatCurrency(stats?.totalRevenue.value || 0, stats?.totalRevenue.currency)}</div>
                         <p className="text-xs text-muted-foreground">
-                            <span className="text-green-500 flex items-center inline-block">
-                                +20.1% <ArrowUpRight className="h-4 w-4 inline ml-1" />
+                            <span className={`${(stats?.totalRevenue.growth || 0) >= 0 ? 'text-green-500' : 'text-red-500'} flex items-center inline-block`}>
+                                {(stats?.totalRevenue.growth || 0) >= 0 ? '+' : ''}{stats?.totalRevenue.growth}% 
+                                {(stats?.totalRevenue.growth || 0) >= 0 ? <ArrowUpRight className="h-4 w-4 inline ml-1" /> : <ArrowDownRight className="h-4 w-4 inline ml-1" />}
                             </span>{' '}
                             from last month
                         </p>
@@ -37,10 +62,11 @@ const OwnerBilling = () => {
                         <CreditCard className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">+2350</div>
+                        <div className="text-2xl font-bold">{formatNumber(stats?.activeSubscriptions.value || 0)}</div>
                         <p className="text-xs text-muted-foreground">
-                            <span className="text-green-500 flex items-center inline-block">
-                                +180.1% <ArrowUpRight className="h-4 w-4 inline ml-1" />
+                            <span className={`${(stats?.activeSubscriptions.growth || 0) >= 0 ? 'text-green-500' : 'text-red-500'} flex items-center inline-block`}>
+                                {(stats?.activeSubscriptions.growth || 0) >= 0 ? '+' : ''}{stats?.activeSubscriptions.growth}% 
+                                {(stats?.activeSubscriptions.growth || 0) >= 0 ? <ArrowUpRight className="h-4 w-4 inline ml-1" /> : <ArrowDownRight className="h-4 w-4 inline ml-1" />}
                             </span>{' '}
                             from last month
                         </p>
@@ -52,10 +78,11 @@ const OwnerBilling = () => {
                         <FileText className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">12</div>
+                        <div className="text-2xl font-bold">{stats?.pendingInvoices.value || 0}</div>
                         <p className="text-xs text-muted-foreground">
-                            <span className="text-red-500 flex items-center inline-block">
-                                -4.5% <ArrowDownRight className="h-4 w-4 inline ml-1" />
+                            <span className={`${(stats?.pendingInvoices.growth || 0) >= 0 ? 'text-green-500' : 'text-red-500'} flex items-center inline-block`}>
+                                {(stats?.pendingInvoices.growth || 0) >= 0 ? '+' : ''}{stats?.pendingInvoices.growth}% 
+                                {(stats?.pendingInvoices.growth || 0) >= 0 ? <ArrowUpRight className="h-4 w-4 inline ml-1" /> : <ArrowDownRight className="h-4 w-4 inline ml-1" />}
                             </span>{' '}
                             from last month
                         </p>
@@ -67,10 +94,11 @@ const OwnerBilling = () => {
                         <DollarSign className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">$19.25</div>
+                        <div className="text-2xl font-bold">{formatCurrency(stats?.arpu.value || 0, stats?.totalRevenue.currency)}</div>
                         <p className="text-xs text-muted-foreground">
-                            <span className="text-green-500 flex items-center inline-block">
-                                +8% <ArrowUpRight className="h-4 w-4 inline ml-1" />
+                            <span className={`${(stats?.arpu.growth || 0) >= 0 ? 'text-green-500' : 'text-red-500'} flex items-center inline-block`}>
+                                {(stats?.arpu.growth || 0) >= 0 ? '+' : ''}{stats?.arpu.growth}% 
+                                {(stats?.arpu.growth || 0) >= 0 ? <ArrowUpRight className="h-4 w-4 inline ml-1" /> : <ArrowDownRight className="h-4 w-4 inline ml-1" />}
                             </span>{' '}
                             from last month
                         </p>

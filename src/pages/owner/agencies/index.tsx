@@ -1,42 +1,31 @@
-import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Building, DollarSign, TrendingUp, Users } from 'lucide-react';
+import { useGetAgenciesQuery } from '@/store/api/agencyApi';
+import { Building, DollarSign, TrendingUp, Users, Loader2 } from 'lucide-react';
 
 export default function AgenciesManagement() {
-    const agencies = [
-        {
-            id: '1',
-            name: 'Digital Marketing Pro',
-            status: 'active',
-            creditBalance: 50000,
-            revenue: 12500,
-            pricingTier: 'Enterprise',
-            brandsCount: 12,
-            createdAt: '2024-01-15',
-        },
-        {
-            id: '2',
-            name: 'Growth Agency',
-            status: 'active',
-            creditBalance: 35000,
-            revenue: 10200,
-            pricingTier: 'Professional',
-            brandsCount: 8,
-            createdAt: '2024-02-01',
-        },
-        {
-            id: '3',
-            name: 'Startup Boost',
-            status: 'suspended',
-            creditBalance: 5000,
-            revenue: 2100,
-            pricingTier: 'Starter',
-            brandsCount: 3,
-            createdAt: '2024-03-10',
-        },
-    ];
+    const { data: agencies = [], isLoading, error } = useGetAgenciesQuery();
+
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center min-h-[400px]">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="flex items-center justify-center min-h-[400px] text-destructive">
+                Error loading agencies. Please try again later.
+            </div>
+        );
+    }
+
+    const totalRevenue = agencies.reduce((acc, agency) => acc + (agency.revenue || 0), 0);
+    const activeAgencies = agencies.filter(a => a.status === 'active').length;
+    const suspendedAgencies = agencies.filter(a => a.status === 'suspended').length;
 
     return (
         <div className="space-y-6">
@@ -60,7 +49,7 @@ export default function AgenciesManagement() {
                         <CardTitle className="text-sm font-medium">Total Agencies</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">24</div>
+                        <div className="text-2xl font-bold">{agencies.length}</div>
                     </CardContent>
                 </Card>
                 <Card>
@@ -68,7 +57,7 @@ export default function AgenciesManagement() {
                         <CardTitle className="text-sm font-medium">Active</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-green-600">21</div>
+                        <div className="text-2xl font-bold text-green-600">{activeAgencies}</div>
                     </CardContent>
                 </Card>
                 <Card>
@@ -76,7 +65,7 @@ export default function AgenciesManagement() {
                         <CardTitle className="text-sm font-medium">Suspended</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-red-600">3</div>
+                        <div className="text-2xl font-bold text-red-600">{suspendedAgencies}</div>
                     </CardContent>
                 </Card>
                 <Card>
@@ -84,7 +73,7 @@ export default function AgenciesManagement() {
                         <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">$45.2K</div>
+                        <div className="text-2xl font-bold">${(totalRevenue / 1000).toFixed(1)}K</div>
                     </CardContent>
                 </Card>
             </div>
@@ -101,7 +90,7 @@ export default function AgenciesManagement() {
                                         <Badge variant={agency.status === 'active' ? 'default' : 'destructive'}>
                                             {agency.status}
                                         </Badge>
-                                        <Badge variant="secondary">{agency.pricingTier}</Badge>
+                                        {agency.pricingTier && <Badge variant="secondary">{agency.pricingTier}</Badge>}
                                     </CardTitle>
                                     <CardDescription className="mt-2">
                                         Created on {new Date(agency.createdAt).toLocaleDateString()}
@@ -119,21 +108,21 @@ export default function AgenciesManagement() {
                                     <p className="text-sm text-muted-foreground">Credit Balance</p>
                                     <p className="text-lg font-semibold flex items-center gap-1">
                                         <DollarSign className="h-4 w-4" />
-                                        {agency.creditBalance.toLocaleString()}
+                                        {(agency.creditBalance || 0).toLocaleString()}
                                     </p>
                                 </div>
                                 <div>
                                     <p className="text-sm text-muted-foreground">Revenue Generated</p>
                                     <p className="text-lg font-semibold text-green-600 flex items-center gap-1">
                                         <TrendingUp className="h-4 w-4" />
-                                        ${agency.revenue.toLocaleString()}
+                                        ${(agency.revenue || 0).toLocaleString()}
                                     </p>
                                 </div>
                                 <div>
                                     <p className="text-sm text-muted-foreground">Brands</p>
                                     <p className="text-lg font-semibold flex items-center gap-1">
                                         <Users className="h-4 w-4" />
-                                        {agency.brandsCount}
+                                        {agency.brandsCount || 0}
                                     </p>
                                 </div>
                                 <div>
@@ -154,3 +143,4 @@ export default function AgenciesManagement() {
         </div>
     );
 }
+

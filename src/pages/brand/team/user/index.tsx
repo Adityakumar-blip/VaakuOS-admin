@@ -44,7 +44,7 @@ export default function UserPage() {
     // Bulk status change state
     const [statusChangeDialogOpen, setStatusChangeDialogOpen] = useState(false);
     const [usersToChangeStatus, setUsersToChangeStatus] = useState<User[]>([]);
-    const [newStatus, setNewStatus] = useState<'active' | 'inactive'>('active');
+    const [newStatus, setNewStatus] = useState<boolean>(true);
 
     // Pagination state with URL persistence
     const { pageSize, pageIndex, setPageSize, setPageIndex } = usePaginationState({
@@ -86,13 +86,13 @@ export default function UserPage() {
     const handleBulkStatusChange = (selectedUsers: User[]) => {
         setUsersToChangeStatus(selectedUsers);
         // Default to opposite of first user's status
-        setNewStatus(selectedUsers[0]?.status === 'active' ? 'inactive' : 'active');
+        setNewStatus(!selectedUsers[0]?.is_active);
         setStatusChangeDialogOpen(true);
     };
 
     const handleConfirmStatusChange = () => {
         usersToChangeStatus.forEach(user => {
-            userService.updateUser(user.id, { status: newStatus });
+            userService.updateUser(user.id, { is_active: newStatus });
         });
         setUsers(userService.getUsers());
         setStatusChangeDialogOpen(false);
@@ -158,19 +158,19 @@ export default function UserPage() {
             }
         },
         {
-            accessorKey: "status",
+            accessorKey: "is_active",
             header: "Status",
             cell: ({ row }) => {
-                const status = row.getValue("status") as string;
+                const isActive = row.getValue("is_active") as boolean;
                 return (
                     <div className="flex items-center gap-2">
-                        {status === 'active' ? (
+                        {isActive ? (
                             <CheckCircle2 size={16} className="text-green-500" />
                         ) : (
                             <XCircle size={16} className="text-muted-foreground" />
                         )}
-                        <span className={`text-sm ${status === 'active' ? 'text-green-600' : 'text-muted-foreground'} capitalize`}>
-                            {status}
+                        <span className={`text-sm ${isActive ? 'text-green-600' : 'text-muted-foreground'} capitalize`}>
+                            {isActive ? 'active' : 'inactive'}
                         </span>
                     </div>
                 );
@@ -300,17 +300,17 @@ export default function UserPage() {
                     </DialogHeader>
                     <div className="flex gap-3 py-4">
                         <Button
-                            variant={newStatus === 'active' ? 'default' : 'outline'}
+                            variant={newStatus === true ? 'default' : 'outline'}
                             className="flex-1"
-                            onClick={() => setNewStatus('active')}
+                            onClick={() => setNewStatus(true)}
                         >
                             <CheckCircle2 size={16} className="mr-2" />
                             Active
                         </Button>
                         <Button
-                            variant={newStatus === 'inactive' ? 'default' : 'outline'}
+                            variant={newStatus === false ? 'default' : 'outline'}
                             className="flex-1"
-                            onClick={() => setNewStatus('inactive')}
+                            onClick={() => setNewStatus(false)}
                         >
                             <XCircle size={16} className="mr-2" />
                             Inactive

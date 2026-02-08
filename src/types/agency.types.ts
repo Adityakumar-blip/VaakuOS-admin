@@ -11,6 +11,9 @@ export interface Agency {
   timezone?: string;
   creditBalance: number;
   status: 'active' | 'suspended';
+  revenue?: number;
+  pricingTier?: string;
+  brandsCount?: number;
   createdAt: string;
   updatedAt: string;
 }

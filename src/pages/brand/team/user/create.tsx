@@ -24,7 +24,7 @@ export default function CreateUserPage() {
         email: '',
         password: '',
         phone: '',
-        isActive: true,
+        is_active: true,
         role: 'user', // Default role
     });
 
@@ -37,7 +37,7 @@ export default function CreateUserPage() {
                     email: user.email,
                     password: '', // Don't show password on edit
                     phone: user.phone || '',
-                    isActive: user.status === 'active',
+                    is_active: user.is_active,
                     role: user.role,
                 });
             } else {
@@ -58,7 +58,7 @@ export default function CreateUserPage() {
                     name: formData.fullName,
                     email: formData.email,
                     role: formData.role as User['role'],
-                    status: formData.isActive ? 'active' : 'inactive',
+                    is_active: formData.is_active,
                     phone: formData.phone,
                 });
                 toast.success('User created successfully');
@@ -67,7 +67,7 @@ export default function CreateUserPage() {
                     name: formData.fullName,
                     email: formData.email,
                     role: formData.role as User['role'],
-                    status: formData.isActive ? 'active' : 'inactive',
+                    is_active: formData.is_active,
                     phone: formData.phone,
                 });
                 toast.success('User updated successfully');
@@ -162,8 +162,8 @@ export default function CreateUserPage() {
                     </div>
                     <div className="pt-2">
                         <StatusSwitch
-                            checked={formData.isActive}
-                            onCheckedChange={(checked) => handleInputChange('isActive', checked)}
+                            checked={formData.is_active}
+                            onCheckedChange={(checked) => handleInputChange('is_active', checked)}
                             label="Active Status"
                             description="Enable or disable this user account"
                             disabled={isViewMode}

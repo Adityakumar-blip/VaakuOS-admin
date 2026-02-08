@@ -10,7 +10,7 @@ export interface User {
   password?: string;
   role?: string | Role;
   user_roles?: { roles: Role }[];
-  status: 'active' | 'inactive';
+  is_active: boolean;
   created_at?: string;
   updated_at?: string;
 }
