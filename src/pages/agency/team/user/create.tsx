@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,10 +6,39 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { StatusSwitch } from '@/components/ui/status-switch';
 import { ArrowLeft, Edit } from 'lucide-react';
-import { userService, type User } from '@/services/userService';
 import { toast } from 'sonner';
+import {
+    useAddUserMutation,
+    useUpdateUserMutation,
+    useGetUserByIdQuery
+} from '@/store/api/userApi';
+import { useGetRolesQuery } from '@/store/api/roleApi';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import { z } from 'zod';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 
-export default function AgencyCreateUserPage() {
+// Schema builder to handle conditional password logic
+const getUserSchema = (isEditMode: boolean) => z.object({
+    fullName: z.string().min(1, 'Full name is required'),
+    email: z.string().email('Invalid email address'),
+    password: isEditMode
+        ? z.string().optional()
+        : z.string().min(6, 'Password must be at least 6 characters'),
+    phone: z.string().optional(),
+    is_active: z.boolean().default(true),
+    role: z.string().min(1, 'Role is required'),
+});
+
+type UserFormValues = z.infer<ReturnType<typeof getUserSchema>>;
+
+export default function OwnerCreateUserPage() {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const id = searchParams.get('id');
@@ -19,65 +48,76 @@ export default function AgencyCreateUserPage() {
     const isEditMode = action === 'edit';
     const isAddMode = !id;
 
-    const [formData, setFormData] = useState({
-        fullName: '',
-        email: '',
-        password: '',
-        phone: '',
-        is_active: true,
-        role: 'user', // Default role
+    // Fetch user details if in edit/view mode
+    const { data: user, isLoading: isUserLoading } = useGetUserByIdQuery(id as string, {
+        skip: !id,
+    });
+
+    // Fetch available roles
+    const { data: roles = [] } = useGetRolesQuery({});
+
+    const [addUser] = useAddUserMutation();
+    const [updateUser] = useUpdateUserMutation();
+
+    // Memoize schema so it doesn't recreate on every render (though overhead is low)
+    const schema = useMemo(() => getUserSchema(Boolean(isEditMode)), [isEditMode]);
+
+    const {
+        register,
+        handleSubmit: handleFormSubmit,
+        control,
+        reset,
+        formState: { errors, isSubmitting },
+    } = useForm<UserFormValues>({
+        resolver: zodResolver(schema),
+        defaultValues: {
+            fullName: '',
+            email: '',
+            password: '',
+            phone: '',
+            is_active: true,
+            role: '',
+        },
     });
 
     useEffect(() => {
-        if (id) {
-            const user = userService.getUserById(id);
-            if (user) {
-                setFormData({
-                    fullName: user.name,
-                    email: user.email,
-                    password: '', // Don't show password on edit
-                    phone: user.phone || '',
-                    is_active: user.is_active,
-                    role: user.role,
-                });
-            } else {
-                toast.error('User not found');
-                navigate('/agency/team/user');
-            }
+        if (user) {
+            reset({
+                fullName: user.name,
+                email: user.email,
+                password: '', // Don't fill password
+                phone: user.phone_number || '',
+                is_active: user.is_active,
+                role: user.user_roles?.[0]?.roles?.id || '',
+            });
         }
-    }, [id, navigate]);
+    }, [user, reset]);
 
-    const handleInputChange = (field: string, value: string | boolean) => {
-        setFormData(prev => ({ ...prev, [field]: value }));
-    };
-
-    const handleSubmit = () => {
+    const handleSubmit = async (data: UserFormValues) => {
         try {
+            const userData = {
+                name: data.fullName,
+                email: data.email,
+                roleId: data.role,
+                is_active: data.is_active,
+                phone_number: data.phone,
+                ...(data.password ? { password: data.password } : {}),
+            };
+
             if (isAddMode) {
-                userService.createUser({
-                    name: formData.fullName,
-                    email: formData.email,
-                    role: formData.role as User['role'],
-                    is_active: formData.is_active,
-                    phone: formData.phone,
-                });
+                await addUser(userData).unwrap();
                 toast.success('User created successfully');
             } else if (isEditMode && id) {
-                userService.updateUser(id, {
-                    name: formData.fullName,
-                    email: formData.email,
-                    role: formData.role as User['role'],
-                    is_active: formData.is_active,
-                    phone: formData.phone,
-                });
+                await updateUser({ id, data: userData }).unwrap();
                 toast.success('User updated successfully');
             }
             navigate('/agency/team/user');
         } catch (error) {
             console.error(error);
-            toast.error('Failed to save user');
+            // Error toast is handled by api middleware
         }
     };
+
 
     const getTitle = () => {
         if (isViewMode) return 'User Details';
@@ -100,7 +140,7 @@ export default function AgencyCreateUserPage() {
                     </Button>
 
                     {!isViewMode && (
-                        <Button onClick={handleSubmit}>
+                        <Button onClick={handleFormSubmit(handleSubmit)} disabled={isSubmitting}>
                             {isEditMode ? 'Update User' : 'Create User'}
                         </Button>
                     )}
@@ -121,10 +161,10 @@ export default function AgencyCreateUserPage() {
                         <Input
                             id="user-name"
                             placeholder="John Doe"
-                            value={formData.fullName}
-                            onChange={(e) => handleInputChange('fullName', e.target.value)}
+                            {...register('fullName')}
                             disabled={isViewMode}
                         />
+                        {errors.fullName && <p className="text-sm text-destructive">{errors.fullName.message}</p>}
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="user-email">Email<span className="text-red-500">*</span></Label>
@@ -132,10 +172,10 @@ export default function AgencyCreateUserPage() {
                             id="user-email"
                             type="email"
                             placeholder="john@example.com"
-                            value={formData.email}
-                            onChange={(e) => handleInputChange('email', e.target.value)}
+                            {...register('email')}
                             disabled={isViewMode}
                         />
+                        {errors.email && <p className="text-sm text-destructive">{errors.email.message}</p>}
                     </div>
                     {!isViewMode && (
                         <div className="space-y-2">
@@ -144,29 +184,62 @@ export default function AgencyCreateUserPage() {
                                 id="user-password"
                                 type="password"
                                 placeholder={isEditMode ? "Leave blank to keep current" : "••••••••"}
-                                value={formData.password}
-                                onChange={(e) => handleInputChange('password', e.target.value)}
+                                {...register('password')}
                             />
+                            {errors.password && <p className="text-sm text-destructive">{errors.password.message}</p>}
                         </div>
                     )}
+                    <div className="space-y-2">
+                        <Label htmlFor="user-role">Role<span className="text-red-500">*</span></Label>
+                        <Controller
+                            control={control}
+                            name="role"
+                            render={({ field }) => (
+                                <Select
+                                    disabled={isViewMode}
+                                    value={field.value}
+                                    onValueChange={field.onChange}
+                                >
+                                    <SelectTrigger id="user-role">
+                                        <SelectValue placeholder="Select a role" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {roles.map((role) => (
+                                            <SelectItem key={role.id} value={role.id}>
+                                                {role.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            )}
+                        />
+                        {errors.role && <p className="text-sm text-destructive">{errors.role.message}</p>}
+                    </div>
+
                     <div className="space-y-2">
                         <Label htmlFor="user-phone">Phone</Label>
                         <Input
                             id="user-phone"
                             type="tel"
                             placeholder="+1 (555) 000-0000"
-                            value={formData.phone}
-                            onChange={(e) => handleInputChange('phone', e.target.value)}
+                            {...register('phone')}
                             disabled={isViewMode}
                         />
+                        {errors.phone && <p className="text-sm text-destructive">{errors.phone.message}</p>}
                     </div>
                     <div className="pt-2">
-                        <StatusSwitch
-                            checked={formData.is_active}
-                            onCheckedChange={(checked) => handleInputChange('is_active', checked)}
-                            label="Active Status"
-                            description="Enable or disable this user account"
-                            disabled={isViewMode}
+                        <Controller
+                            control={control}
+                            name="is_active"
+                            render={({ field }) => (
+                                <StatusSwitch
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                    label="Active Status"
+                                    description="Enable or disable this user account"
+                                    disabled={isViewMode}
+                                />
+                            )}
                         />
                     </div>
                 </CardContent>

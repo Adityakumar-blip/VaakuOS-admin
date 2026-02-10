@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePaginationState } from '@/hooks/usePaginationState';
+import { useSearch } from '@/hooks/useSearch';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -18,21 +19,33 @@ import {
     XCircle,
     RefreshCw,
     Trash2,
+    Download,
 } from 'lucide-react';
 import { TableHeader as TableHeaderComponent, RowActions } from '@/components/table';
 import { ConfirmationDialog } from '@/components/common/ConfirmationDialog';
-import { userService, type User } from '@/services/userService';
-import { DataTable, BulkAction } from '@/components/ui/data-table';
-import { ColumnDef } from '@tanstack/react-table';
+import { DataTable, type BulkAction } from '@/components/ui/data-table';
+import { type ColumnDef } from '@tanstack/react-table';
+import { useGetUsersQuery, useDeleteUserMutation, useUpdateUserMutation, type User } from '@/store/api/userApi';
+import { type Role } from '@/store/api/roleApi';
 
-export default function AgencyUserPage() {
+export default function OwnerUserPage() {
     const navigate = useNavigate();
 
-    // Users state
-    const [users, setUsers] = useState<User[]>(() => userService.getUsers());
-
     // Search state
-    const [search, setSearch] = useState('');
+    const { search, debouncedSearch, handleSearchChange, setSearch } = useSearch({
+        onSearchChange: () => setPageIndex(0),
+    });
+
+    // Pagination state with URL persistence
+    const { pageSize, pageIndex, setPageSize, setPageIndex } = usePaginationState({
+        defaultPageSize: 10,
+        defaultPageIndex: 0,
+    });
+
+    // Fetch users from API
+    const { data: users = [], isLoading } = useGetUsersQuery({
+        search: debouncedSearch,
+    });
 
     // Selection state
     const [selectedRows, setSelectedRows] = useState<Record<string, boolean>>({});
@@ -46,15 +59,10 @@ export default function AgencyUserPage() {
     const [usersToChangeStatus, setUsersToChangeStatus] = useState<User[]>([]);
     const [newStatus, setNewStatus] = useState<boolean>(true);
 
-    // Pagination state with URL persistence
-    const { pageSize, pageIndex, setPageSize, setPageIndex } = usePaginationState({
-        defaultPageSize: 10,
-        defaultPageIndex: 0,
-    });
+    const [deleteUser] = useDeleteUserMutation();
+    const [updateUser] = useUpdateUserMutation();
 
-    const handleSearchChange = (value: string) => {
-        setSearch(value);
-    };
+
 
     const handleDeleteClick = () => {
         setDeleteConfirmOpen(true);
@@ -65,18 +73,22 @@ export default function AgencyUserPage() {
         setDeleteConfirmOpen(true);
     };
 
-    const handleConfirmDelete = () => {
-        if (userToDelete) {
-            userService.deleteUser(userToDelete);
-            setUserToDelete(null);
-        } else {
-            const selectedIds = Object.keys(selectedRows);
-            userService.deleteUsers(selectedIds);
-            setSelectedRows({});
+    const handleConfirmDelete = async () => {
+        try {
+            if (userToDelete) {
+                await deleteUser(userToDelete).unwrap();
+                setUserToDelete(null);
+            } else {
+                const selectedIds = Object.keys(selectedRows);
+                await Promise.all(selectedIds.map(id => deleteUser(id).unwrap()));
+                setSelectedRows({});
+            }
+            setDeleteConfirmOpen(false);
+        } catch (error) {
+            console.error('Failed to delete users:', error);
         }
-        setUsers(userService.getUsers());
-        setDeleteConfirmOpen(false);
     };
+
 
     const handleBulkDelete = (selectedUsers: User[]) => {
         setUserToDelete(null); // Indicates bulk mode
@@ -90,14 +102,19 @@ export default function AgencyUserPage() {
         setStatusChangeDialogOpen(true);
     };
 
-    const handleConfirmStatusChange = () => {
-        usersToChangeStatus.forEach(user => {
-            userService.updateUser(user.id, { is_active: newStatus });
-        });
-        setUsers(userService.getUsers());
-        setStatusChangeDialogOpen(false);
-        setUsersToChangeStatus([]);
-        setSelectedRows({});
+    const handleConfirmStatusChange = async () => {
+        try {
+            await Promise.all(
+                usersToChangeStatus.map(user =>
+                    updateUser({ id: user.id as string, data: { is_active: newStatus } }).unwrap()
+                )
+            );
+            setStatusChangeDialogOpen(false);
+            setUsersToChangeStatus([]);
+            setSelectedRows({});
+        } catch (error) {
+            console.error('Failed to update status:', error);
+        }
     };
 
     // Define columns
@@ -149,14 +166,22 @@ export default function AgencyUserPage() {
             accessorKey: "role",
             header: "Role",
             cell: ({ row }) => {
-                const role = row.getValue("role") as string;
+                const user = row.original;
+                const roles = user.user_roles?.map((ur: { roles: Role }) => ur.roles?.name).filter(Boolean) || [];
                 return (
-                    <Badge variant="outline" className="capitalize font-normal">
-                        {role}
-                    </Badge>
+                    <div className="flex flex-wrap gap-1">
+                        {roles.length > 0 ? roles.map((roleName: string) => (
+                            <Badge key={roleName} variant="outline" className="capitalize font-normal">
+                                {roleName}
+                            </Badge>
+                        )) : (
+                            <span className="text-muted-foreground text-xs italic">No Role</span>
+                        )}
+                    </div>
                 );
             }
         },
+
         {
             accessorKey: "is_active",
             header: "Status",
@@ -222,16 +247,36 @@ export default function AgencyUserPage() {
     // Bulk actions configuration
     const bulkActions: BulkAction<User>[] = [
         {
-            label: "Change Status",
+            label: "Update Status",
             icon: <RefreshCw size={16} />,
             onClick: handleBulkStatusChange,
             variant: "default",
+            shortcut: "s",
+        },
+        {
+            label: "Download CSV",
+            icon: <Download size={16} />,
+            onClick: (users) => {
+                const csvContent = "data:text/csv;charset=utf-8,"
+                    + "Name,Email,Role,Status\n"
+                    + users.map(u => `${u.name},${u.email},${u.role},${u.is_active ? 'active' : 'inactive'}`).join("\n");
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", `users_report_${users.length}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            },
+            variant: "default",
+            shortcut: "c",
         },
         {
             label: "Delete Selected",
             icon: <Trash2 size={16} />,
             onClick: handleBulkDelete,
             variant: "destructive",
+            shortcut: "d",
         },
     ];
 

@@ -8,12 +8,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useGetRoleByIdQuery, useAddRoleMutation, useUpdateRoleMutation } from '@/store/api/roleApi';
-import { getPermissionGroupsByTenantType } from '@/constants/permissionGroups';
-import { Permission } from '@/types/permissions.enum';
+import { OWNER_PERMISSIONS, PermissionModule } from '@/constants/ownerPermissions';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { z } from 'zod';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 
 // Zod Schema
@@ -60,11 +59,18 @@ export default function OwnerRoleFormPage() {
 
     const selectedPermissions = watch('permissions');
 
-    // Get permission groups for owner tenant type
-    const groups = getPermissionGroupsByTenantType('owner');
+    // Flatten permissions for calculating counts
+    const getAllModulePermissions = (module: PermissionModule) => {
+        if (module.children) {
+            return module.children.flatMap((child) =>
+                child.actions.map((action: string) => `${child.module}.${action}`)
+            );
+        }
+        return (module.actions || []).map((action: string) => `${module.module}.${action}`);
+    };
 
     // Active tab state
-    const [activeTab, setActiveTab] = useState(groups[0]?.id || '');
+    const [activeTab, setActiveTab] = useState(OWNER_PERMISSIONS[0]?.module || '');
 
     // Populate form when role data is loaded (edit mode)
     useEffect(() => {
@@ -77,7 +83,7 @@ export default function OwnerRoleFormPage() {
         }
     }, [role, isEditMode, reset]);
 
-    const handlePermissionToggle = (permission: Permission) => {
+    const handlePermissionToggle = (permission: string) => {
         const currentPermissions = new Set(selectedPermissions);
         if (currentPermissions.has(permission)) {
             currentPermissions.delete(permission);
@@ -143,7 +149,7 @@ export default function OwnerRoleFormPage() {
     }
 
     const isLoading = isCreating || isUpdating;
-    const activeGroup = groups.find(g => g.id === activeTab);
+    const activeModuleDescriptor = OWNER_PERMISSIONS.find(m => m.module === activeTab);
 
     return (
         <div className="p-6 space-y-6">
@@ -209,16 +215,16 @@ export default function OwnerRoleFormPage() {
                     <div className="flex gap-6 h-full">
                         {/* Left Sidebar - Permission Categories (Scrollable) */}
                         <div className="w-64 flex-shrink-0 space-y-1 overflow-y-auto pr-2">
-                            {groups.map((group) => {
-                                const groupPermissions = group.permissions;
-                                const selectedCount = groupPermissions.filter(p => isPermissionSelected(p)).length;
-                                const isActive = activeTab === group.id;
+                            {OWNER_PERMISSIONS.map((module) => {
+                                const modulePermissions = getAllModulePermissions(module);
+                                const selectedCount = modulePermissions.filter(p => isPermissionSelected(p)).length;
+                                const isActive = activeTab === module.module;
 
                                 return (
                                     <button
-                                        key={group.id}
+                                        key={module.module}
                                         type="button"
-                                        onClick={() => setActiveTab(group.id)}
+                                        onClick={() => setActiveTab(module.module)}
                                         className={cn(
                                             "w-full text-left px-4 py-3 rounded-lg transition-colors",
                                             "flex items-center justify-between group",
@@ -227,35 +233,41 @@ export default function OwnerRoleFormPage() {
                                                 : "hover:bg-muted text-muted-foreground hover:text-foreground"
                                         )}
                                     >
-                                        <span className="font-medium">{group.label}</span>
+                                        <span className="font-medium">{module.label}</span>
                                         <span className={cn(
                                             "text-xs px-2 py-0.5 rounded-full",
                                             isActive
                                                 ? "bg-primary-foreground/20 text-primary-foreground"
                                                 : "bg-muted text-muted-foreground group-hover:bg-muted-foreground/20"
                                         )}>
-                                            {selectedCount}/{groupPermissions.length}
+                                            {selectedCount}/{modulePermissions.length}
                                         </span>
                                     </button>
                                 );
                             })}
                         </div>
 
-                        {/* Right Content - Permission Checkboxes (Fixed, No Scroll) */}
-                        <div className="flex-1 flex flex-col h-full">
-                            {activeGroup && (
-                                <>
-                                    <div className="flex items-start justify-between mb-4 flex-shrink-0">
-                                        <div className="flex-1">
-                                            <div className="flex items-center gap-3 mb-1">
+                        {/* Right Content - Permission Checkboxes */}
+                        <div className="flex-1 flex flex-col h-full overflow-y-auto">
+                            {activeModuleDescriptor && (
+                                <div className="space-y-6">
+                                    {/* Handle flat modules (no children) */}
+                                    {!activeModuleDescriptor.children && (
+                                        <div className="space-y-4">
+                                            <div className="flex items-center gap-2 pb-2 border-b">
                                                 <Checkbox
-                                                    id={`select-all-${activeGroup.id}`}
-                                                    checked={activeGroup.permissions.every(p => isPermissionSelected(p))}
+                                                    id={`select-all-${activeModuleDescriptor.module}`}
+                                                    checked={activeModuleDescriptor.actions.every(action =>
+                                                        isPermissionSelected(`${activeModuleDescriptor.module}.${action}`)
+                                                    )}
                                                     onCheckedChange={() => {
                                                         const newPermissions = new Set(selectedPermissions);
-                                                        const allSelected = activeGroup.permissions.every(p => isPermissionSelected(p));
+                                                        const allSelected = activeModuleDescriptor.actions.every(action =>
+                                                            isPermissionSelected(`${activeModuleDescriptor.module}.${action}`)
+                                                        );
 
-                                                        activeGroup.permissions.forEach(permission => {
+                                                        activeModuleDescriptor.actions.forEach(action => {
+                                                            const permission = `${activeModuleDescriptor.module}.${action}`;
                                                             if (allSelected) {
                                                                 newPermissions.delete(permission);
                                                             } else {
@@ -265,32 +277,80 @@ export default function OwnerRoleFormPage() {
                                                         setValue('permissions', Array.from(newPermissions), { shouldValidate: true });
                                                     }}
                                                 />
-                                                <Label htmlFor={`select-all-${activeGroup.id}`} className="text-lg font-semibold cursor-pointer">
-                                                    {activeGroup.label}
+                                                <Label htmlFor={`select-all-${activeModuleDescriptor.module}`} className="text-lg font-semibold cursor-pointer">
+                                                    {activeModuleDescriptor.label}
                                                 </Label>
                                             </div>
-                                            <p className="text-sm text-muted-foreground ml-9">{activeGroup.description}</p>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                                {activeModuleDescriptor.actions.map(action => (
+                                                    <div key={action} className="flex items-center space-x-3 p-3 rounded-lg border hover:bg-muted/50 transition-colors">
+                                                        <Checkbox
+                                                            id={`${activeModuleDescriptor.module}.${action}`}
+                                                            checked={isPermissionSelected(`${activeModuleDescriptor.module}.${action}`)}
+                                                            onCheckedChange={() => handlePermissionToggle(`${activeModuleDescriptor.module}.${action}`)}
+                                                        />
+                                                        <Label
+                                                            htmlFor={`${activeModuleDescriptor.module}.${action}`}
+                                                            className="text-sm cursor-pointer font-normal flex-1 capitalize"
+                                                        >
+                                                            {action.replace(/_/g, ' ')}
+                                                        </Label>
+                                                    </div>
+                                                ))}
+                                            </div>
                                         </div>
-                                    </div>
+                                    )}
 
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 content-start">
-                                        {activeGroup.permissions.map((permission) => (
-                                            <div key={permission} className="flex items-center space-x-3 p-3 rounded-lg border hover:bg-muted/50 transition-colors">
+                                    {/* Handle nested modules (children) */}
+                                    {activeModuleDescriptor.children && activeModuleDescriptor.children.map(child => (
+                                        <div key={child.module} className="space-y-4">
+                                            <div className="flex items-center gap-2 pb-2 border-b">
                                                 <Checkbox
-                                                    id={permission}
-                                                    checked={isPermissionSelected(permission)}
-                                                    onCheckedChange={() => handlePermissionToggle(permission)}
+                                                    id={`select-all-${child.module}`}
+                                                    checked={child.actions.every(action =>
+                                                        isPermissionSelected(`${child.module}.${action}`)
+                                                    )}
+                                                    onCheckedChange={() => {
+                                                        const newPermissions = new Set(selectedPermissions);
+                                                        const allSelected = child.actions.every(action =>
+                                                            isPermissionSelected(`${child.module}.${action}`)
+                                                        );
+
+                                                        child.actions.forEach(action => {
+                                                            const permission = `${child.module}.${action}`;
+                                                            if (allSelected) {
+                                                                newPermissions.delete(permission);
+                                                            } else {
+                                                                newPermissions.add(permission);
+                                                            }
+                                                        });
+                                                        setValue('permissions', Array.from(newPermissions), { shouldValidate: true });
+                                                    }}
                                                 />
-                                                <Label
-                                                    htmlFor={permission}
-                                                    className="text-sm cursor-pointer font-normal flex-1"
-                                                >
-                                                    {permission.split(':')[1]?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                                                <Label htmlFor={`select-all-${child.module}`} className="text-lg font-semibold cursor-pointer">
+                                                    {child.label}
                                                 </Label>
                                             </div>
-                                        ))}
-                                    </div>
-                                </>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                                {child.actions.map(action => (
+                                                    <div key={action} className="flex items-center space-x-3 p-3 rounded-lg border hover:bg-muted/50 transition-colors">
+                                                        <Checkbox
+                                                            id={`${child.module}.${action}`}
+                                                            checked={isPermissionSelected(`${child.module}.${action}`)}
+                                                            onCheckedChange={() => handlePermissionToggle(`${child.module}.${action}`)}
+                                                        />
+                                                        <Label
+                                                            htmlFor={`${child.module}.${action}`}
+                                                            className="text-sm cursor-pointer font-normal flex-1 capitalize"
+                                                        >
+                                                            {action.replace(/_/g, ' ')}
+                                                        </Label>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
                             )}
                         </div>
                     </div>

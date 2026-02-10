@@ -1,7 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { usePaginationState } from '@/hooks/usePaginationState';
-import { Button } from '@/components/ui/button';
+import { useSearch } from '@/hooks/useSearch';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -12,31 +12,26 @@ import { TableHeader as TableHeaderComponent, RowActions } from '@/components/ta
 import { ConfirmationDialog } from '@/components/common/ConfirmationDialog';
 import { DataTable } from '@/components/ui/data-table';
 import { ColumnDef } from '@tanstack/react-table';
+import { useGetRolesQuery, useDeleteRoleMutation, Role } from '@/store/api/roleApi';
 
-interface RoleItem {
-    id: string;
-    name: string;
-    description: string;
-    users: number;
-    isSystem: boolean;
-}
-
-const rolesData: RoleItem[] = [
-    { id: '1', name: 'Super Admin', description: 'Full access to all system modules and settings', users: 2, isSystem: true },
-    { id: '2', name: 'Admin', description: 'Access to most modules, cannot manage system settings', users: 5, isSystem: false },
-    { id: '3', name: 'Manager', description: 'Can view and approve requests', users: 12, isSystem: false },
-    { id: '4', name: 'Support Agent', description: 'Can view and respond to tickets', users: 24, isSystem: false },
-    { id: '5', name: 'Viewer', description: 'Read-only access to basic data', users: 8, isSystem: false },
-    { id: '6', name: 'Editor', description: 'Can create and edit content', users: 15, isSystem: false },
-    { id: '7', name: 'Moderator', description: 'Can moderate user content and comments', users: 7, isSystem: false },
-    { id: '8', name: 'Analyst', description: 'Can view analytics and generate reports', users: 10, isSystem: false },
-];
-
-export default function AgencyRolePage() {
+export default function OwnerRolePage() {
     const navigate = useNavigate();
 
     // Search state
-    const [search, setSearch] = useState('');
+    const { search, debouncedSearch, handleSearchChange, setSearch } = useSearch({
+        onSearchChange: () => setPageIndex(0),
+    });
+
+    // Pagination state with URL persistence
+    const { pageSize, pageIndex, setPageSize, setPageIndex } = usePaginationState({
+        defaultPageSize: 10,
+        defaultPageIndex: 0,
+    });
+
+    // Fetch roles from API
+    const { data: rolesData = [], isLoading } = useGetRolesQuery({
+        search: debouncedSearch,
+    });
 
     // Selection state
     const [selectedRows, setSelectedRows] = useState<Record<string, boolean>>({});
@@ -45,15 +40,8 @@ export default function AgencyRolePage() {
     const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
     const [roleToDelete, setRoleToDelete] = useState<string | null>(null);
 
-    // Pagination state with URL persistence
-    const { pageSize, pageIndex, setPageSize, setPageIndex } = usePaginationState({
-        defaultPageSize: 10,
-        defaultPageIndex: 0,
-    });
+    const [deleteRole] = useDeleteRoleMutation();
 
-    const handleSearchChange = (value: string) => {
-        setSearch(value);
-    };
 
     const handleDeleteClick = () => {
         setDeleteConfirmOpen(true);
@@ -64,26 +52,28 @@ export default function AgencyRolePage() {
         setDeleteConfirmOpen(true);
     };
 
-    const handleConfirmDelete = () => {
-        if (roleToDelete) {
-            console.log('Deleting role:', roleToDelete);
-            setRoleToDelete(null);
-        } else {
-            console.log('Deleting roles:', Object.keys(selectedRows));
-            setSelectedRows({});
+    const handleConfirmDelete = async () => {
+        try {
+            if (roleToDelete) {
+                await deleteRole(roleToDelete).unwrap();
+                setRoleToDelete(null);
+            } else {
+                const ids = Object.keys(selectedRows);
+                await Promise.all(ids.map(id => deleteRole(id).unwrap()));
+                setSelectedRows({});
+            }
+            setDeleteConfirmOpen(false);
+        } catch (error) {
+            console.error('Failed to delete roles:', error);
         }
     };
 
-    // Filter roles based on search
-    const filteredRoles = useMemo(() => {
-        return rolesData.filter(
-            (role) => role.name.toLowerCase().includes(search.toLowerCase()) ||
-                role.description.toLowerCase().includes(search.toLowerCase())
-        );
-    }, [search]);
+    // Filter roles - since backend handles search, we just use rolesData
+    const filteredRoles = rolesData;
+
 
     // Define columns
-    const columns: ColumnDef<RoleItem>[] = [
+    const columns: ColumnDef<Role>[] = [
         {
             id: "select",
             header: ({ table }) => (
@@ -142,13 +132,14 @@ export default function AgencyRolePage() {
             }
         },
         {
-            accessorKey: "users",
-            header: () => <div className="text-center">Users</div>,
+            accessorKey: "permissions",
+            header: () => <div className="text-center">Permissions</div>,
             cell: ({ row }) => {
+                const permissionCount = row.original.permissions?.length || 0;
                 return (
                     <div className="text-center">
                         <Badge variant="outline" className="font-normal">
-                            {row.original.users} users
+                            {permissionCount} permission{permissionCount !== 1 ? 's' : ''}
                         </Badge>
                     </div>
                 );
@@ -161,7 +152,7 @@ export default function AgencyRolePage() {
                 const role = row.original;
                 return (
                     <RowActions
-                        onEdit={() => navigate(`/agency/team/role/create?id=${role.id}&action=edit`)}
+                        onEdit={() => navigate(`/agency/team/role/create/${role.id}`)}
                         onDelete={!role.isSystem ? () => handleDeleteSingle(role.id) : undefined}
                     />
                 );
