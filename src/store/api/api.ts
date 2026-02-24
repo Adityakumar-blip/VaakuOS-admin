@@ -127,6 +127,8 @@ export const api = createApi({
     'Agency',
     'Brand',
     'Finance',
+    'Blog',
+    'BlogCategory',
   ],
   endpoints: () => ({}),
 });

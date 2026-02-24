@@ -323,4 +323,27 @@ export const OWNER_MODULES: ModuleConfig[] = [
     icon: "RectangleGroupIcon",
     adminTypes: ["owner"],
   },
+  {
+    id: "blog",
+    name: "Blog",
+    path: "/owner/blog",
+    icon: "NewspaperIcon",
+    adminTypes: ["owner"],
+    children: [
+      {
+        id: "all-blogs",
+        name: "All Blogs",
+        path: "/owner/blog",
+        icon: "DocumentTextIcon",
+        adminTypes: ["owner"],
+      },
+      {
+        id: "blog-categories",
+        name: "Categories",
+        path: "/owner/blog/categories",
+        icon: "TagIcon",
+        adminTypes: ["owner"],
+      },
+    ],
+  },
 ];
