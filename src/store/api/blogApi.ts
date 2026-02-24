@@ -24,7 +24,7 @@ export interface Blog {
     author?: {
         id: string;
         name: string;
-        profile?: any;
+        profile?: unknown;
     };
     _count?: {
         comments: number;
@@ -60,12 +60,21 @@ export interface CreateBlogDto {
     utm_campaign?: string;
 }
 
-export interface UpdateBlogDto extends Partial<CreateBlogDto> { }
+export type UpdateBlogDto = Partial<CreateBlogDto>
 
 export interface CreateBlogCategoryDto {
     name: string;
     slug: string;
     description?: string;
+}
+
+export interface UploadMediaResponse {
+    message: string;
+    url: string;
+    public_id: string;
+    resource_type: string;
+    width: number;
+    height: number;
 }
 
 export const blogApi = api.injectEndpoints({
@@ -131,6 +140,13 @@ export const blogApi = api.injectEndpoints({
             }),
             invalidatesTags: [{ type: 'BlogCategory', id: 'LIST' }],
         }),
+        uploadMedia: builder.mutation<UploadMediaResponse, FormData>({
+            query: (body) => ({
+                url: '/media/upload',
+                method: 'POST',
+                body,
+            }),
+        }),
     }),
 });
 
@@ -142,4 +158,5 @@ export const {
     useDeleteBlogMutation,
     useGetCategoriesQuery,
     useCreateCategoryMutation,
+    useUploadMediaMutation,
 } = blogApi;

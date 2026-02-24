@@ -11,15 +11,15 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { ArrowLeft, Save, Globe, Image as ImageIcon, Search } from 'lucide-react';
+import { ArrowLeft, Save } from 'lucide-react';
 import { RichEditor } from '@/components/common/RichEditor';
-import { 
-    useCreateBlogMutation, 
-    useUpdateBlogMutation, 
-    useGetBlogQuery, 
+import {
+    useCreateBlogMutation,
+    useUpdateBlogMutation,
+    useGetBlogQuery,
     useGetCategoriesQuery,
-    CreateBlogDto 
+    useUploadMediaMutation,
+    CreateBlogDto
 } from '@/store/api/blogApi';
 import { toast } from 'sonner';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -34,6 +34,7 @@ export default function BlogCreatePage() {
     const { data: blog, isLoading: isBlogLoading } = useGetBlogQuery(id || '', { skip: !id });
     const [createBlog] = useCreateBlogMutation();
     const [updateBlog] = useUpdateBlogMutation();
+    const [uploadMedia, { isLoading: isUploading }] = useUploadMediaMutation();
 
     const [formData, setFormData] = useState<CreateBlogDto>({
         title: '',
@@ -72,6 +73,23 @@ export default function BlogCreatePage() {
     const handleTitleChange = (title: string) => {
         const slug = title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
         setFormData({ ...formData, title, slug });
+    };
+
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const uploadData = new FormData();
+        uploadData.append('file', file);
+
+        try {
+            const response = await uploadMedia(uploadData).unwrap();
+            setFormData({ ...formData, featured_image: response.url });
+            toast.success('Image uploaded successfully');
+        } catch (error) {
+            toast.error('Failed to upload image');
+            e.target.value = ''; // Reset input
+        }
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -158,21 +176,21 @@ export default function BlogCreatePage() {
 
                     <Tabs defaultValue="seo" className="w-full">
                         <TabsList className="w-full justify-start border-b rounded-none bg-transparent h-auto p-0">
-                            <TabsTrigger 
-                                value="seo" 
+                            <TabsTrigger
+                                value="seo"
                                 className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-6 py-3"
                             >
                                 SEO Settings
                             </TabsTrigger>
-                            <TabsTrigger 
-                                value="utm" 
+                            <TabsTrigger
+                                value="utm"
                                 className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-6 py-3"
                             >
                                 UTM Tracking
                             </TabsTrigger>
                         </TabsList>
-                        
-                        <TabsContent value="seo" className="bg-card border border-border border-t-0 rounded-b-lg p-6 space-y-6">
+
+                        <TabsContent value="seo" className="mt-0 bg-card border border-border border-t-0 rounded-b-lg p-6 space-y-6">
                             <div className="space-y-2">
                                 <Label htmlFor="meta_title">Meta Title</Label>
                                 <Input
@@ -194,33 +212,35 @@ export default function BlogCreatePage() {
                             </div>
                         </TabsContent>
 
-                        <TabsContent value="utm" className="bg-card border border-border border-t-0 rounded-b-lg p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div className="space-y-2">
-                                <Label htmlFor="utm_source">UTM Source</Label>
-                                <Input
-                                    id="utm_source"
-                                    value={formData.utm_source}
-                                    onChange={(e) => setFormData({ ...formData, utm_source: e.target.value })}
-                                    placeholder="e.g. newsletter"
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="utm_medium">UTM Medium</Label>
-                                <Input
-                                    id="utm_medium"
-                                    value={formData.utm_medium}
-                                    onChange={(e) => setFormData({ ...formData, utm_medium: e.target.value })}
-                                    placeholder="e.g. email"
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="utm_campaign">UTM Campaign</Label>
-                                <Input
-                                    id="utm_campaign"
-                                    value={formData.utm_campaign}
-                                    onChange={(e) => setFormData({ ...formData, utm_campaign: e.target.value })}
-                                    placeholder="e.g. summer_sale"
-                                />
+                        <TabsContent value="utm" className="mt-0 bg-card border border-border border-t-0 rounded-b-lg p-6">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div className="space-y-2">
+                                    <Label htmlFor="utm_source">UTM Source</Label>
+                                    <Input
+                                        id="utm_source"
+                                        value={formData.utm_source}
+                                        onChange={(e) => setFormData({ ...formData, utm_source: e.target.value })}
+                                        placeholder="e.g. newsletter"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="utm_medium">UTM Medium</Label>
+                                    <Input
+                                        id="utm_medium"
+                                        value={formData.utm_medium}
+                                        onChange={(e) => setFormData({ ...formData, utm_medium: e.target.value })}
+                                        placeholder="e.g. email"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="utm_campaign">UTM Campaign</Label>
+                                    <Input
+                                        id="utm_campaign"
+                                        value={formData.utm_campaign}
+                                        onChange={(e) => setFormData({ ...formData, utm_campaign: e.target.value })}
+                                        placeholder="e.g. summer_sale"
+                                    />
+                                </div>
                             </div>
                         </TabsContent>
                     </Tabs>
@@ -230,8 +250,8 @@ export default function BlogCreatePage() {
                     <div className="bg-card border border-border rounded-lg p-6 space-y-6">
                         <div className="space-y-2">
                             <Label htmlFor="status">Publishing Status</Label>
-                            <Select 
-                                value={formData.status} 
+                            <Select
+                                value={formData.status}
                                 onValueChange={(value) => setFormData({ ...formData, status: value })}
                             >
                                 <SelectTrigger>
@@ -247,8 +267,8 @@ export default function BlogCreatePage() {
 
                         <div className="space-y-2">
                             <Label htmlFor="category">Category</Label>
-                            <Select 
-                                value={formData.category_id || "none"} 
+                            <Select
+                                value={formData.category_id || "none"}
                                 onValueChange={(value) => setFormData({ ...formData, category_id: value === "none" ? undefined : value })}
                             >
                                 <SelectTrigger>
@@ -263,9 +283,9 @@ export default function BlogCreatePage() {
                                     ))}
                                 </SelectContent>
                             </Select>
-                            <Button 
-                                variant="link" 
-                                size="sm" 
+                            <Button
+                                variant="link"
+                                size="sm"
                                 className="h-auto p-0 text-xs"
                                 onClick={() => navigate('/owner/blog/categories')}
                             >
@@ -274,23 +294,35 @@ export default function BlogCreatePage() {
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="featured_image">Featured Image URL</Label>
+                            <Label htmlFor="featured_image">Featured Image</Label>
                             <div className="flex gap-2">
                                 <Input
                                     id="featured_image"
-                                    value={formData.featured_image}
-                                    onChange={(e) => setFormData({ ...formData, featured_image: e.target.value })}
-                                    placeholder="https://..."
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={handleImageUpload}
+                                    disabled={isUploading}
                                 />
                             </div>
+                            {isUploading && <div className="text-sm text-muted-foreground mt-2">Uploading image...</div>}
                             {formData.featured_image && (
-                                <div className="mt-2 aspect-video rounded-lg border border-border overflow-hidden bg-muted">
-                                    <img 
-                                        src={formData.featured_image} 
-                                        alt="Preview" 
+                                <div className="mt-2 relative aspect-video rounded-lg border border-border overflow-hidden bg-muted group">
+                                    <img
+                                        src={formData.featured_image}
+                                        alt="Preview"
                                         className="w-full h-full object-cover"
                                         onError={(e) => (e.currentTarget.style.display = 'none')}
                                     />
+                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                        <Button
+                                            type="button"
+                                            variant="destructive"
+                                            size="sm"
+                                            onClick={() => setFormData({ ...formData, featured_image: '' })}
+                                        >
+                                            Remove Image
+                                        </Button>
+                                    </div>
                                 </div>
                             )}
                         </div>
