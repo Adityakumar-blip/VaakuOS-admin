@@ -1,26 +1,27 @@
-import React, { useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useEditor, EditorContent, Editor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
 import Underline from '@tiptap/extension-underline';
 import Placeholder from '@tiptap/extension-placeholder';
 import Image from '@tiptap/extension-image';
-import {TextStyle} from '@tiptap/extension-text-style';
+import { TextStyle } from '@tiptap/extension-text-style';
 import Color from '@tiptap/extension-color';
 import Highlight from '@tiptap/extension-highlight';
 import TaskList from '@tiptap/extension-task-list';
 import TaskItem from '@tiptap/extension-task-item';
-import { 
-  Bold, 
-  Italic, 
-  Underline as UnderlineIcon, 
-  Strikethrough, 
-  List, 
-  ListOrdered, 
-  Quote, 
-  Undo, 
-  Redo, 
-  Link as LinkIcon, 
+import CharacterCount from '@tiptap/extension-character-count';
+import {
+  Bold,
+  Italic,
+  Underline as UnderlineIcon,
+  Strikethrough,
+  List,
+  ListOrdered,
+  Quote,
+  Undo,
+  Redo,
+  Link as LinkIcon,
   Image as ImageIcon,
   Code,
   Heading1,
@@ -45,16 +46,16 @@ interface RichEditorProps {
   className?: string;
 }
 
-const MenuButton = ({ 
-  onClick, 
-  isActive = false, 
-  disabled = false, 
-  tooltip, 
-  children 
-}: { 
-  onClick: () => void; 
-  isActive?: boolean; 
-  disabled?: boolean; 
+const MenuButton = ({
+  onClick,
+  isActive = false,
+  disabled = false,
+  tooltip,
+  children
+}: {
+  onClick: () => void;
+  isActive?: boolean;
+  disabled?: boolean;
   tooltip: string;
   children: React.ReactNode;
 }) => (
@@ -98,7 +99,7 @@ const MenuBar = ({ editor }: { editor: Editor | null }) => {
     }
   };
 
-  const setLink = useCallback(() => {
+  const setLink = () => {
     const previousUrl = editor.getAttributes('link').href;
     const url = window.prompt('URL', previousUrl);
 
@@ -115,7 +116,7 @@ const MenuBar = ({ editor }: { editor: Editor | null }) => {
 
     // update link
     editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
-  }, [editor]);
+  };
 
   return (
     <div className="flex flex-wrap items-center gap-1 p-2 border-b border-border bg-muted/20 sticky top-0 z-10 transition-colors">
@@ -249,6 +250,8 @@ const MenuBar = ({ editor }: { editor: Editor | null }) => {
 };
 
 export const RichEditor = ({ value, onChange, placeholder, className }: RichEditorProps) => {
+  const [characterCount, setCharacterCount] = useState(0);
+
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -272,10 +275,12 @@ export const RichEditor = ({ value, onChange, placeholder, className }: RichEdit
       Placeholder.configure({
         placeholder: placeholder || 'Start typing...',
       }),
+      CharacterCount,
     ],
     content: value,
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML());
+      setCharacterCount(editor.storage.characterCount.characters());
     },
     editorProps: {
       attributes: {
@@ -288,11 +293,18 @@ export const RichEditor = ({ value, onChange, placeholder, className }: RichEdit
   });
 
   // Sync content if value changes externally (and it's different from editor content)
-  React.useEffect(() => {
+  useEffect(() => {
     if (editor && value !== editor.getHTML()) {
       editor.commands.setContent(value);
+      setCharacterCount(editor.storage.characterCount.characters());
     }
   }, [value, editor]);
+
+  useEffect(() => {
+    if (editor) {
+      setCharacterCount(editor.storage.characterCount.characters());
+    }
+  }, [editor]);
 
   return (
     <div className="group flex flex-col w-full border border-border rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all duration-200">
@@ -304,7 +316,7 @@ export const RichEditor = ({ value, onChange, placeholder, className }: RichEdit
         <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-medium">Rich Text Editor</p>
         {editor && (
           <p className="text-[10px] text-muted-foreground font-medium">
-            {editor.storage.characterCount?.characters?.() || 0} characters
+            {characterCount} characters
           </p>
         )}
       </div>
