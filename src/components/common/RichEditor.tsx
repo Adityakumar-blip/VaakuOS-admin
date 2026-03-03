@@ -77,6 +77,7 @@ import { TableContextMenu } from '../editor/components/TableContextMenu';
 import { TableEdgeMenu } from '../editor/components/TableEdgeMenu';
 import { TableGrips } from '../editor/extensions/TableGrips';
 import { TableOfContents } from './TableOfContents';
+import { AiAutocomplete } from '../editor/extensions/AiAutocomplete';
 
 // Editor styles
 import '../editor/EditorStyles.css';
@@ -86,6 +87,7 @@ interface RichEditorProps {
   onChange: (value: string) => void;
   placeholder?: string;
   className?: string;
+  aiEnabled?: boolean;
 }
 
 /* ---- Top Menu Bar Button ---- */
@@ -306,7 +308,7 @@ const MenuBar = ({ editor }: { editor: Editor | null }) => {
   );
 };
 
-export const RichEditor = memo(({ value, onChange, placeholder, className }: RichEditorProps) => {
+export const RichEditor = memo(({ value, onChange, placeholder, className, aiEnabled = false }: RichEditorProps) => {
   const [characterCount, setCharacterCount] = useState(0);
   const lastEmittedValue = useRef(value);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -473,7 +475,11 @@ export const RichEditor = memo(({ value, onChange, placeholder, className }: Ric
       }),
       CharacterCount,
       TableGrips,
-      TableOfContentsNode, // Add TableOfContentsNode here
+      TableOfContentsNode,
+      AiAutocomplete.configure({
+        debounceTime: 600,
+        enabled: aiEnabled,
+      }),
       SlashCommand.configure({
         suggestion: {
           items: ({ editor }) => [
@@ -631,6 +637,16 @@ export const RichEditor = memo(({ value, onChange, placeholder, className }: Ric
     }
   }, [editor]);
 
+  // Update AI extension "enabled" dynamically
+  useEffect(() => {
+    if (editor) {
+      const aiExt = editor.extensionManager.extensions.find(e => e.name === 'aiAutocomplete');
+      if (aiExt) {
+        aiExt.options.enabled = aiEnabled;
+      }
+    }
+  }, [editor, aiEnabled]);
+
   return (
     <div className={`w-full relative notion-editor-container ${className}`} ref={containerRef}>
       {/* Non-sticky Top Toolbar */}
@@ -641,7 +657,7 @@ export const RichEditor = memo(({ value, onChange, placeholder, className }: Ric
           <EditorContent editor={editor} />
           {editor && (
             <>
-              <FloatingToolbar editor={editor} />
+              <FloatingToolbar editor={editor} aiEnabled={aiEnabled} />
               <SlashMenu editor={editor} />
               <BlockHandle editor={editor} />
               <TableContextMenu editor={editor} />

@@ -17,22 +17,25 @@ import {
     Palette,
     Merge,
     Split,
+    Sparkles,
 } from 'lucide-react';
 import { useFloating, offset, flip, shift, autoUpdate } from '@floating-ui/react';
 import { ColorPicker } from './ColorPicker';
 import { TurnIntoMenu, getBlockTypeLabel } from './TurnIntoMenu';
 import { LinkEditor } from './LinkEditor';
+import { AiMenu } from './AiMenu';
 
 import { Editor } from '@tiptap/react';
 import { CellSelection } from '@tiptap/pm/tables';
 
-type ActivePanel = 'none' | 'turnInto' | 'color' | 'link' | 'more';
+type ActivePanel = 'none' | 'turnInto' | 'color' | 'link' | 'more' | 'ai';
 
 interface FloatingToolbarProps {
     editor: Editor | null;
+    aiEnabled?: boolean;
 }
 
-export const FloatingToolbar: React.FC<FloatingToolbarProps> = memo(({ editor }) => {
+export const FloatingToolbar: React.FC<FloatingToolbarProps> = memo(({ editor, aiEnabled = false }) => {
     const [isVisible, setIsVisible] = useState(false);
     const [activePanel, setActivePanel] = useState<ActivePanel>('none');
     const [updateTick, setUpdateTick] = useState(0); // Force re-render for active states
@@ -203,6 +206,20 @@ export const FloatingToolbar: React.FC<FloatingToolbarProps> = memo(({ editor })
                 </button>
 
                 <div className="toolbar-divider" />
+
+                {/* AI Button */}
+                {aiEnabled && (
+                    <>
+                        <button type="button"
+                            className={`toolbar-btn text-primary hover:bg-primary/10 ${activePanel === 'ai' ? 'active bg-primary/10' : ''}`}
+                            onClick={() => togglePanel('ai')}
+                            title="Ask AI"
+                        >
+                            <Sparkles size={16} className="animate-pulse-slow" />
+                        </button>
+                        <div className="toolbar-divider" />
+                    </>
+                )}
 
                 {/* Formatting buttons */}
                 <button type="button"
@@ -388,6 +405,12 @@ export const FloatingToolbar: React.FC<FloatingToolbarProps> = memo(({ editor })
                                 <span className="dropdown-icon"><AlignJustify size={16} /></span>
                                 Justify
                             </button>
+                        </div>
+                    )}
+
+                    {activePanel === 'ai' && (
+                        <div className="editor-dropdown p-0 border-primary/20 shadow-lg shadow-primary/5">
+                            <AiMenu editor={editor} onClose={() => setActivePanel('none')} />
                         </div>
                     )}
                 </div>

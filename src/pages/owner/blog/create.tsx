@@ -170,6 +170,7 @@ export default function BlogCreatePage() {
                                 value={formData.content}
                                 onChange={(value) => setFormData({ ...formData, content: value })}
                                 placeholder="Write your blog content here..."
+                                aiEnabled={true}
                             />
                         </div>
                     </div>
