@@ -73,7 +73,9 @@ import { SlashCommand } from '../editor/extensions/SlashCommand';
 import { ResizableImage } from '../editor/extensions/ResizableImage';
 import { EmojiSuggestion } from '../editor/extensions/EmojiSuggestion';
 import { MentionSuggestion } from '../editor/extensions/MentionSuggestion';
-import { TableMenu } from '../editor/components/TableMenu';
+import { TableContextMenu } from '../editor/components/TableContextMenu';
+import { TableEdgeMenu } from '../editor/components/TableEdgeMenu';
+import { TableGrips } from '../editor/extensions/TableGrips';
 import { TableOfContents } from './TableOfContents';
 
 // Editor styles
@@ -362,17 +364,61 @@ export const RichEditor = memo(({ value, onChange, placeholder, className }: Ric
       }),
       TableRow.configure({
         HTMLAttributes: {
-          class: 'border-b border-border/50 last:border-0 hover:bg-muted/30 transition-colors',
+          class: 'border-b border-border/50 hover:bg-muted/30 transition-colors',
         },
       }),
-      TableHeader.configure({
+      TableHeader.extend({
+        addAttributes() {
+          return {
+            ...this.parent?.(),
+            backgroundColor: {
+              default: null,
+              parseHTML: element => element.style.backgroundColor || null,
+              renderHTML: attributes => {
+                if (!attributes.backgroundColor) return {}
+                return { style: `background-color: ${attributes.backgroundColor}` }
+              },
+            },
+            verticalAlign: {
+              default: null,
+              parseHTML: element => element.style.verticalAlign || null,
+              renderHTML: attributes => {
+                if (!attributes.verticalAlign) return {}
+                return { style: `vertical-align: ${attributes.verticalAlign}` }
+              },
+            }
+          }
+        }
+      }).configure({
         HTMLAttributes: {
-          class: 'border-r border-border/50 last:border-0 bg-muted/50 p-3 text-left font-semibold text-foreground align-top',
+          class: 'border-r border-border/50 bg-muted/50 p-3 text-left font-semibold text-foreground align-top',
         },
       }),
-      TableCell.configure({
+      TableCell.extend({
+        addAttributes() {
+          return {
+            ...this.parent?.(),
+            backgroundColor: {
+              default: null,
+              parseHTML: element => element.style.backgroundColor || null,
+              renderHTML: attributes => {
+                if (!attributes.backgroundColor) return {}
+                return { style: `background-color: ${attributes.backgroundColor}` }
+              },
+            },
+            verticalAlign: {
+              default: null,
+              parseHTML: element => element.style.verticalAlign || null,
+              renderHTML: attributes => {
+                if (!attributes.verticalAlign) return {}
+                return { style: `vertical-align: ${attributes.verticalAlign}` }
+              },
+            }
+          }
+        }
+      }).configure({
         HTMLAttributes: {
-          class: 'border-r border-border/50 last:border-0 p-3 align-top',
+          class: 'border-r border-border/50 p-3 align-top',
         },
       }),
       BulletList.configure({
@@ -426,6 +472,7 @@ export const RichEditor = memo(({ value, onChange, placeholder, className }: Ric
         },
       }),
       CharacterCount,
+      TableGrips,
       TableOfContentsNode, // Add TableOfContentsNode here
       SlashCommand.configure({
         suggestion: {
@@ -597,7 +644,8 @@ export const RichEditor = memo(({ value, onChange, placeholder, className }: Ric
               <FloatingToolbar editor={editor} />
               <SlashMenu editor={editor} />
               <BlockHandle editor={editor} />
-              <TableMenu editor={editor} />
+              <TableContextMenu editor={editor} />
+              <TableEdgeMenu editor={editor} />
             </>
           )}
         </div>

@@ -15,6 +15,8 @@ import {
     AlignRight,
     AlignJustify,
     Palette,
+    Merge,
+    Split,
 } from 'lucide-react';
 import { useFloating, offset, flip, shift, autoUpdate } from '@floating-ui/react';
 import { ColorPicker } from './ColorPicker';
@@ -22,6 +24,7 @@ import { TurnIntoMenu, getBlockTypeLabel } from './TurnIntoMenu';
 import { LinkEditor } from './LinkEditor';
 
 import { Editor } from '@tiptap/react';
+import { CellSelection } from '@tiptap/pm/tables';
 
 type ActivePanel = 'none' | 'turnInto' | 'color' | 'link' | 'more';
 
@@ -57,6 +60,18 @@ export const FloatingToolbar: React.FC<FloatingToolbarProps> = memo(({ editor })
             }
 
             if (editor.isActive('codeBlock') || editor.isActive('image')) {
+                setIsVisible(false);
+                return;
+            }
+
+            // Hide toolbar when table context menu is open
+            if (document.querySelector('.table-context-menu')) {
+                setIsVisible(false);
+                return;
+            }
+
+            // Hide toolbar for CellSelection (when row/col handles are clicked)
+            if (state.selection instanceof CellSelection) {
                 setIsVisible(false);
                 return;
             }
@@ -227,6 +242,30 @@ export const FloatingToolbar: React.FC<FloatingToolbarProps> = memo(({ editor })
                 </button>
 
                 <div className="toolbar-divider" />
+
+                {editor.isActive('table') && (
+                    <>
+                        {editor.can().mergeCells() && (
+                            <button type="button"
+                                className="toolbar-btn"
+                                onClick={() => editor.chain().focus().mergeCells().run()}
+                                title="Merge cells"
+                            >
+                                <Merge size={16} />
+                            </button>
+                        )}
+                        {editor.can().splitCell() && (
+                            <button type="button"
+                                className="toolbar-btn"
+                                onClick={() => editor.chain().focus().splitCell().run()}
+                                title="Split cell"
+                            >
+                                <Split size={16} />
+                            </button>
+                        )}
+                        {(editor.can().mergeCells() || editor.can().splitCell()) && <div className="toolbar-divider" />}
+                    </>
+                )}
 
                 {/* Link */}
                 <button type="button"

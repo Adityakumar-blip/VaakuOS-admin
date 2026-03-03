@@ -242,6 +242,30 @@ export const SlashMenu: React.FC<SlashMenuProps> = ({ editor }) => {
         return () => document.removeEventListener('keydown', handleKeyDown, true);
     }, [active, filteredItems, selectedIndex, selectItem]);
 
+    // Auto-scroll selected item into view (without scrolling the page)
+    useEffect(() => {
+        if (!active || !menuRef.current) return;
+        const container = menuRef.current;
+        const selected = container.children[selectedIndex] as HTMLElement | undefined;
+        if (!selected) return;
+
+        const containerScrollTop = container.scrollTop;
+        const containerHeight = container.clientHeight;
+        const itemTop = selected.offsetTop;
+        const itemHeight = selected.offsetHeight;
+
+        // Add a buffer to account for container padding (e.g. 6px padding)
+        const buffer = 8;
+
+        if (itemTop < containerScrollTop + buffer) {
+            // Scroll up
+            container.scrollTop = itemTop - buffer;
+        } else if (itemTop + itemHeight > containerScrollTop + containerHeight - buffer) {
+            // Scroll down
+            container.scrollTop = itemTop + itemHeight - containerHeight + buffer;
+        }
+    }, [selectedIndex, active]);
+
     if (!active || filteredItems.length === 0) return null;
 
     return (

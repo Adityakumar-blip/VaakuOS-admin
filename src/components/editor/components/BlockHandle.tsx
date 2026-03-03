@@ -25,6 +25,10 @@ function resolveTopBlock(editor: Editor, docPos: number): number | null {
             if (['bulletList', 'orderedList', 'taskList', 'blockquote'].includes(node.type.name)) {
                 continue;
             }
+            if (node.type.name === 'table') {
+                targetDepth = i;
+                break;
+            }
             if (node.isBlock) {
                 targetDepth = i;
             }
@@ -51,15 +55,16 @@ export const BlockHandle: React.FC<BlockHandleProps> = memo(({ editor }) => {
     }>({ isDragging: false, dragNode: null, sourcePos: null, indicator: null });
 
     useEffect(() => {
-        if (!editor) return;
+        if (!editor || editor.isDestroyed) return;
 
-        const editorDom = editor.view.dom;
-        const editorContainer = editorDom.closest('.notion-editor') as HTMLElement | null;
-        if (!editorContainer) return;
+        let editorContainer: HTMLElement | null = null;
+        let editorDom: HTMLElement | null = null;
+        let checkInterval: NodeJS.Timeout;
 
         const handleMouseMove = (e: MouseEvent) => {
             // Don't update while dragging or context menu is open
             if (dragState.current.isDragging) return;
+            if (editor.isDestroyed || !editorDom || !editorContainer) return;
 
             const editorRect = editorDom.getBoundingClientRect();
             const containerRect = editorContainer.getBoundingClientRect();
@@ -102,6 +107,14 @@ export const BlockHandle: React.FC<BlockHandleProps> = memo(({ editor }) => {
                     return;
                 }
 
+                // If the top level block is a table, hide the block handle
+                // because tables have their own dedicated table grips.
+                const node = editor.state.doc.nodeAt(topLevelPos);
+                if (node?.type.name === 'table') {
+                    if (!showContextMenu) setVisible(false);
+                    return;
+                }
+
                 const blockRect = dom.getBoundingClientRect();
                 // Account for scroll offset inside the container
                 const offsetTop = blockRect.top - containerRect.top + editorContainer.scrollTop;
@@ -120,12 +133,33 @@ export const BlockHandle: React.FC<BlockHandleProps> = memo(({ editor }) => {
             }
         };
 
-        editorContainer.addEventListener('mousemove', handleMouseMove);
-        editorContainer.addEventListener('mouseleave', handleMouseLeave);
+        const tryAttach = () => {
+            if (editor.isDestroyed) {
+                clearInterval(checkInterval);
+                return;
+            }
+            try {
+                editorDom = editor.view.dom;
+                editorContainer = editorDom.closest('.notion-editor') as HTMLElement | null;
+                if (editorContainer) {
+                    editorContainer.addEventListener('mousemove', handleMouseMove);
+                    editorContainer.addEventListener('mouseleave', handleMouseLeave);
+                    clearInterval(checkInterval);
+                }
+            } catch (err) {
+                // not mounted yet, will try again
+            }
+        };
+
+        checkInterval = setInterval(tryAttach, 50);
+        tryAttach();
 
         return () => {
-            editorContainer.removeEventListener('mousemove', handleMouseMove);
-            editorContainer.removeEventListener('mouseleave', handleMouseLeave);
+            clearInterval(checkInterval);
+            if (editorContainer) {
+                editorContainer.removeEventListener('mousemove', handleMouseMove);
+                editorContainer.removeEventListener('mouseleave', handleMouseLeave);
+            }
         };
     }, [editor, showContextMenu]);
 

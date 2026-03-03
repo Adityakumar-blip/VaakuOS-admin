@@ -718,17 +718,25 @@
 }
 
 /* Tiptap Table Styles */
+.tiptap .tableWrapper {
+  margin: 1.5rem -24px;
+  padding: 24px;
+  /* 24px on all sides provides room for row/col handles and edge menus */
+  /* Room for left row handles and top col handles */
+  overflow-x: auto;
+  position: relative;
+}
+
 .tiptap table {
   border-collapse: collapse;
-  table-layout: fixed;
-  width: 100%;
   margin: 0;
-  overflow: hidden;
+  width: 100%;
+  overflow: visible;
 }
 
 .tiptap table td,
 .tiptap table th {
-  min-width: 1em;
+  min-width: 75px;
   border: 1px solid hsl(var(--border) / 0.5);
   padding: 8px 12px;
   vertical-align: top;
@@ -746,11 +754,12 @@
   z-index: 2;
   position: absolute;
   content: "";
-  left: 0;
-  right: 0;
-  top: 0;
-  bottom: 0;
+  left: -1px;
+  right: -1px;
+  top: -1px;
+  bottom: -1px;
   background: hsl(var(--primary) / 0.1);
+  border: 2px solid hsl(var(--primary));
   pointer-events: none;
 }
 
@@ -762,6 +771,63 @@
   width: 4px;
   background-color: hsl(var(--primary));
   pointer-events: none;
+}
+
+/* Custom Table Drag Handles */
+.tiptap table {
+  /* Override so handles positioned relative to table structure can break outside the table cell overflow without clipping */
+  overflow: visible;
+}
+
+.table-row-handle,
+.table-col-handle {
+  position: absolute;
+  z-index: 50;
+  width: 20px;
+  height: 20px;
+  background-color: hsl(var(--background));
+  border: 1px solid hsl(var(--border) / 0.4);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s ease, border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.tiptap .table-row-handle.active,
+.tiptap .table-col-handle.active,
+.tiptap .table-row-handle.hovered,
+.tiptap .table-col-handle.hovered,
+.tiptap .table-row-handle:hover,
+.tiptap .table-col-handle:hover,
+.tiptap table tr td.selectedCell:first-child .table-row-handle,
+.tiptap table tr th.selectedCell:first-child .table-row-handle,
+.tiptap table tr:first-child td.selectedCell .table-col-handle,
+.tiptap table tr:first-child th.selectedCell .table-col-handle {
+  opacity: 1;
+}
+
+.table-row-handle:hover,
+.table-col-handle:hover {
+  background-color: hsl(var(--muted) / 0.8);
+  border-color: hsl(var(--border));
+}
+
+/* Row handles sit on the left of the very first cell in each row */
+.tiptap table tr td:first-child .table-row-handle,
+.tiptap table tr th:first-child .table-row-handle {
+  left: -24px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* Column handles sit on top of every cell in the first row */
+.tiptap table tr:first-child td .table-col-handle,
+.tiptap table tr:first-child th .table-col-handle {
+  top: -24px;
+  left: 50%;
+  transform: translateX(-50%);
 }
 
 .tiptap p {
