@@ -18,6 +18,19 @@ import {
     Merge,
     Split,
     Sparkles,
+    Highlighter,
+    List,
+    ListOrdered,
+    ListChecks,
+    Quote,
+    Minus,
+    AtSign,
+    Smile,
+    Table as TableIcon,
+    Image as ImageIcon,
+    BookOpen,
+    Undo,
+    Redo
 } from 'lucide-react';
 import { useFloating, offset, flip, shift, autoUpdate } from '@floating-ui/react';
 import { ColorPicker } from './ColorPicker';
@@ -27,6 +40,12 @@ import { AiMenu } from './AiMenu';
 
 import { Editor } from '@tiptap/react';
 import { CellSelection } from '@tiptap/pm/tables';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 type ActivePanel = 'none' | 'turnInto' | 'color' | 'link' | 'more' | 'ai';
 
@@ -35,18 +54,80 @@ interface FloatingToolbarProps {
     aiEnabled?: boolean;
 }
 
+const ToolbarButton = ({
+    onClick,
+    isActive = false,
+    tooltip,
+    children,
+    className = "",
+    disabled = false
+}: {
+    onClick: () => void;
+    isActive?: boolean;
+    tooltip: string;
+    children: React.ReactNode;
+    className?: string;
+    disabled?: boolean;
+}) => (
+    <TooltipProvider delayDuration={0}>
+        <Tooltip>
+            <TooltipTrigger asChild>
+                <button
+                    type="button"
+                    disabled={disabled}
+                    className={`toolbar-btn ${isActive ? 'active' : ''} ${className} ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    onClick={(e) => {
+                        if (disabled) return;
+                        e.preventDefault();
+                        onClick();
+                    }}
+                >
+                    {children}
+                </button>
+            </TooltipTrigger>
+            <TooltipContent side="top" sideOffset={8}>
+                <p className="text-xs">{tooltip}</p>
+            </TooltipContent>
+        </Tooltip>
+    </TooltipProvider>
+);
+
 export const FloatingToolbar: React.FC<FloatingToolbarProps> = memo(({ editor, aiEnabled = false }) => {
     const [isVisible, setIsVisible] = useState(false);
     const [activePanel, setActivePanel] = useState<ActivePanel>('none');
     const [updateTick, setUpdateTick] = useState(0); // Force re-render for active states
     const toolbarRef = useRef<HTMLDivElement>(null);
     const panelRef = useRef<HTMLDivElement>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const { refs, floatingStyles, update } = useFloating({
         placement: 'top',
         middleware: [offset(10), flip(), shift({ padding: 8 })],
         whileElementsMounted: autoUpdate,
     });
+
+    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file || !editor) return;
+
+        if (!file.type.startsWith('image/')) {
+            alert('Please upload an image file');
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = (readerEvent) => {
+            const src = readerEvent.target?.result as string;
+            if (src) {
+                editor.chain().focus().setImage({ src }).run();
+            }
+        };
+        reader.readAsDataURL(file);
+
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    };
 
     // Track selection changes
     useEffect(() => {
@@ -62,7 +143,7 @@ export const FloatingToolbar: React.FC<FloatingToolbarProps> = memo(({ editor, a
                 return;
             }
 
-            if (editor.isActive('codeBlock') || editor.isActive('image')) {
+            if (editor.isActive('codeBlock') || editor.isActive('image') || editor.isActive('iframeEmbed')) {
                 setIsVisible(false);
                 return;
             }
@@ -196,225 +277,329 @@ export const FloatingToolbar: React.FC<FloatingToolbarProps> = memo(({ editor, a
                 className="floating-toolbar"
                 style={floatingStyles}
             >
-                {/* Block type dropdown */}
-                <button type="button"
-                    className="block-type-btn"
-                    onClick={() => togglePanel('turnInto')}
-                >
-                    {blockLabel}
-                    <ChevronDown size={12} />
-                </button>
-
-                <div className="toolbar-divider" />
-
                 {/* AI Button */}
                 {aiEnabled && (
                     <>
-                        <button type="button"
-                            className={`toolbar-btn text-primary hover:bg-primary/10 ${activePanel === 'ai' ? 'active bg-primary/10' : ''}`}
-                            onClick={() => togglePanel('ai')}
-                            title="Ask AI"
-                        >
-                            <Sparkles size={16} className="animate-pulse-slow" />
-                        </button>
+                        <div className="relative">
+                            <ToolbarButton
+                                className={`text-primary hover:bg-primary/10 ${activePanel === 'ai' ? 'active bg-primary/10' : ''}`}
+                                onClick={() => togglePanel('ai')}
+                                tooltip="Ask AI"
+                            >
+                                <Sparkles size={16} className="animate-pulse-slow" />
+                                {/* <span className="ml-1 text-xs font-medium">Improve</span> */}
+                            </ToolbarButton>
+                            {activePanel === 'ai' && (
+                                <div className="absolute top-full left-0 mt-2 z-50" ref={panelRef}>
+                                    <div className="editor-dropdown p-0 border-primary/20 shadow-lg shadow-primary/5">
+                                        <AiMenu editor={editor} onClose={() => setActivePanel('none')} />
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                         <div className="toolbar-divider" />
                     </>
                 )}
 
+                {/* Block type dropdown (Turn Into) */}
+                <div className="relative">
+                    <button type="button"
+                        className="block-type-btn"
+                        onClick={() => togglePanel('turnInto')}
+                    >
+                        {blockLabel}
+                        <ChevronDown size={12} />
+                    </button>
+                    {activePanel === 'turnInto' && (
+                        <div className="absolute top-full left-0 mt-2 z-50" ref={panelRef}>
+                            <TurnIntoMenu
+                                editor={editor}
+                                onClose={() => setActivePanel('none')}
+                            />
+                        </div>
+                    )}
+                </div>
+
+                <div className="toolbar-divider" />
+
                 {/* Formatting buttons */}
-                <button type="button"
-                    className={`toolbar-btn ${editor.isActive('bold') ? 'active' : ''}`}
+                <ToolbarButton
+                    isActive={editor.isActive('bold')}
                     onClick={() => editor.chain().focus().toggleBold().run()}
-                    title="Bold"
+                    tooltip="Bold"
                 >
                     <Bold size={16} />
-                </button>
-                <button type="button"
-                    className={`toolbar-btn ${editor.isActive('italic') ? 'active' : ''}`}
+                </ToolbarButton>
+                <ToolbarButton
+                    isActive={editor.isActive('italic')}
                     onClick={() => editor.chain().focus().toggleItalic().run()}
-                    title="Italic"
+                    tooltip="Italic"
                 >
                     <Italic size={16} />
-                </button>
-                <button type="button"
-                    className={`toolbar-btn ${editor.isActive('underline') ? 'active' : ''}`}
+                </ToolbarButton>
+                <ToolbarButton
+                    isActive={editor.isActive('underline')}
                     onClick={() => editor.chain().focus().toggleUnderline().run()}
-                    title="Underline"
+                    tooltip="Underline"
                 >
                     <UnderlineIcon size={16} />
-                </button>
-                <button type="button"
-                    className={`toolbar-btn ${editor.isActive('strike') ? 'active' : ''}`}
+                </ToolbarButton>
+                <ToolbarButton
+                    isActive={editor.isActive('strike')}
                     onClick={() => editor.chain().focus().toggleStrike().run()}
-                    title="Strikethrough"
+                    tooltip="Strikethrough"
                 >
                     <Strikethrough size={16} />
-                </button>
-                <button type="button"
-                    className={`toolbar-btn ${editor.isActive('code') ? 'active' : ''}`}
+                </ToolbarButton>
+                <ToolbarButton
+                    isActive={editor.isActive('code')}
                     onClick={() => editor.chain().focus().toggleCode().run()}
-                    title="Inline Code"
+                    tooltip="Inline Code"
                 >
                     <Code size={16} />
-                </button>
+                </ToolbarButton>
+                <ToolbarButton
+                    isActive={editor.isActive('highlight')}
+                    onClick={() => editor.chain().focus().toggleHighlight().run()}
+                    tooltip="Highlight"
+                >
+                    <Highlighter size={16} />
+                </ToolbarButton>
+
+                <div className="toolbar-divider" />
+
+                <ToolbarButton
+                    isActive={editor.isActive('bulletList')}
+                    onClick={() => editor.chain().focus().toggleBulletList().run()}
+                    tooltip="Bullet List"
+                >
+                    <List size={16} />
+                </ToolbarButton>
+                <ToolbarButton
+                    isActive={editor.isActive('orderedList')}
+                    onClick={() => editor.chain().focus().toggleOrderedList().run()}
+                    tooltip="Numbered List"
+                >
+                    <ListOrdered size={16} />
+                </ToolbarButton>
+                <ToolbarButton
+                    isActive={editor.isActive('taskList')}
+                    onClick={() => editor.chain().focus().toggleTaskList().run()}
+                    tooltip="Task List"
+                >
+                    <ListChecks size={16} />
+                </ToolbarButton>
+                <ToolbarButton
+                    isActive={editor.isActive('blockquote')}
+                    onClick={() => editor.chain().focus().toggleBlockquote().run()}
+                    tooltip="Blockquote"
+                >
+                    <Quote size={16} />
+                </ToolbarButton>
+                <ToolbarButton
+                    onClick={() => editor.chain().focus().setHorizontalRule().run()}
+                    tooltip="Divider"
+                >
+                    <Minus size={16} />
+                </ToolbarButton>
+
+                <div className="toolbar-divider" />
+
+                <ToolbarButton
+                    onClick={() => editor.chain().focus().insertContent('@').run()}
+                    tooltip="Mention"
+                >
+                    <AtSign size={16} />
+                </ToolbarButton>
+                <ToolbarButton
+                    onClick={() => editor.chain().focus().insertContent(':').run()}
+                    tooltip="Emoji"
+                >
+                    <Smile size={16} />
+                </ToolbarButton>
+                <ToolbarButton
+                    onClick={() => editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run()}
+                    tooltip="Insert Table"
+                >
+                    <TableIcon size={16} />
+                </ToolbarButton>
+                <ToolbarButton
+                    onClick={() => editor.chain().focus().insertContent({ type: 'tableOfContents' }).run()}
+                    tooltip="Insert Table of Contents"
+                >
+                    <BookOpen size={16} />
+                </ToolbarButton>
 
                 <div className="toolbar-divider" />
 
                 {editor.isActive('table') && (
                     <>
                         {editor.can().mergeCells() && (
-                            <button type="button"
-                                className="toolbar-btn"
+                            <ToolbarButton
                                 onClick={() => editor.chain().focus().mergeCells().run()}
-                                title="Merge cells"
+                                tooltip="Merge cells"
                             >
                                 <Merge size={16} />
-                            </button>
+                            </ToolbarButton>
                         )}
                         {editor.can().splitCell() && (
-                            <button type="button"
-                                className="toolbar-btn"
+                            <ToolbarButton
                                 onClick={() => editor.chain().focus().splitCell().run()}
-                                title="Split cell"
+                                tooltip="Split cell"
                             >
                                 <Split size={16} />
-                            </button>
+                            </ToolbarButton>
                         )}
                         {(editor.can().mergeCells() || editor.can().splitCell()) && <div className="toolbar-divider" />}
                     </>
                 )}
 
                 {/* Link */}
-                <button type="button"
-                    className={`toolbar-btn ${editor.isActive('link') ? 'active' : ''}`}
-                    onClick={() => togglePanel('link')}
-                    title="Link"
-                >
-                    <LinkIcon size={16} />
-                </button>
-
-                {/* Color */}
-                <button type="button"
-                    className={`toolbar-btn ${activePanel === 'color' ? 'active' : ''}`}
-                    onClick={() => togglePanel('color')}
-                    title="Color"
-                >
-                    <Palette size={16} />
-                </button>
-
-                {/* More options */}
-                <button type="button"
-                    className={`toolbar-btn ${activePanel === 'more' ? 'active' : ''}`}
-                    onClick={() => togglePanel('more')}
-                    title="More options"
-                >
-                    <MoreHorizontal size={16} />
-                </button>
-            </div>
-
-            {/* Sub-panels — positioned RELATIVE to toolbar via absolute inside a wrapper */}
-            {activePanel !== 'none' && (
-                <div
-                    ref={panelRef}
-                    className="floating-toolbar-panel"
-                    style={{
-                        ...floatingStyles,
-                        // Shift down below the toolbar
-                        transform: `${floatingStyles.transform ?? ''} translateY(${(toolbarRef.current?.offsetHeight ?? 40) + 14}px)`,
-                    }}
-                >
-                    {activePanel === 'turnInto' && (
-                        <TurnIntoMenu
-                            editor={editor}
-                            onClose={() => setActivePanel('none')}
-                        />
-                    )}
-
-                    {activePanel === 'color' && (
-                        <div className="editor-dropdown">
-                            <ColorPicker editor={editor} onClose={() => setActivePanel('none')} />
-                        </div>
-                    )}
-
+                <div className="relative">
+                    <ToolbarButton
+                        isActive={activePanel === 'link' || editor.isActive('link')}
+                        onClick={() => togglePanel('link')}
+                        tooltip="Link"
+                    >
+                        <LinkIcon size={16} />
+                    </ToolbarButton>
                     {activePanel === 'link' && (
-                        <div className="editor-dropdown">
-                            <LinkEditor editor={editor} onClose={() => setActivePanel('none')} />
-                        </div>
-                    )}
-
-                    {activePanel === 'more' && (
-                        <div className="editor-dropdown">
-                            <button type="button"
-                                className={`dropdown-item ${editor.isActive('superscript') ? 'active' : ''}`}
-                                onClick={() => {
-                                    editor.chain().focus().toggleSuperscript().run();
-                                    setActivePanel('none');
-                                }}
-                            >
-                                <span className="dropdown-icon"><Superscript size={16} /></span>
-                                Superscript
-                            </button>
-                            <button type="button"
-                                className={`dropdown-item ${editor.isActive('subscript') ? 'active' : ''}`}
-                                onClick={() => {
-                                    editor.chain().focus().toggleSubscript().run();
-                                    setActivePanel('none');
-                                }}
-                            >
-                                <span className="dropdown-icon"><Subscript size={16} /></span>
-                                Subscript
-                            </button>
-                            <div style={{ height: 1, background: 'hsl(var(--border))', margin: '4px 0' }} />
-                            <button type="button"
-                                className={`dropdown-item ${editor.isActive({ textAlign: 'left' }) ? 'active' : ''}`}
-                                onClick={() => {
-                                    editor.chain().focus().setTextAlign('left').run();
-                                    setActivePanel('none');
-                                }}
-                            >
-                                <span className="dropdown-icon"><AlignLeft size={16} /></span>
-                                Align left
-                            </button>
-                            <button type="button"
-                                className={`dropdown-item ${editor.isActive({ textAlign: 'center' }) ? 'active' : ''}`}
-                                onClick={() => {
-                                    editor.chain().focus().setTextAlign('center').run();
-                                    setActivePanel('none');
-                                }}
-                            >
-                                <span className="dropdown-icon"><AlignCenter size={16} /></span>
-                                Align center
-                            </button>
-                            <button type="button"
-                                className={`dropdown-item ${editor.isActive({ textAlign: 'right' }) ? 'active' : ''}`}
-                                onClick={() => {
-                                    editor.chain().focus().setTextAlign('right').run();
-                                    setActivePanel('none');
-                                }}
-                            >
-                                <span className="dropdown-icon"><AlignRight size={16} /></span>
-                                Align right
-                            </button>
-                            <button type="button"
-                                className={`dropdown-item ${editor.isActive({ textAlign: 'justify' }) ? 'active' : ''}`}
-                                onClick={() => {
-                                    editor.chain().focus().setTextAlign('justify').run();
-                                    setActivePanel('none');
-                                }}
-                            >
-                                <span className="dropdown-icon"><AlignJustify size={16} /></span>
-                                Justify
-                            </button>
-                        </div>
-                    )}
-
-                    {activePanel === 'ai' && (
-                        <div className="editor-dropdown p-0 border-primary/20 shadow-lg shadow-primary/5">
-                            <AiMenu editor={editor} onClose={() => setActivePanel('none')} />
+                        <div className="absolute top-[calc(100%+8px)] right-0 z-50 w-64" ref={panelRef}>
+                            <div className="editor-dropdown">
+                                <LinkEditor editor={editor} onClose={() => setActivePanel('none')} />
+                            </div>
                         </div>
                     )}
                 </div>
-            )}
+
+                {/* Image Upload */}
+                <ToolbarButton
+                    onClick={() => fileInputRef.current?.click()}
+                    tooltip="Upload Image"
+                >
+                    <ImageIcon size={16} />
+                </ToolbarButton>
+                <input
+                    type="file"
+                    ref={fileInputRef}
+                    className="hidden"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                />
+
+                {/* Color */}
+                <div className="relative">
+                    <ToolbarButton
+                        isActive={activePanel === 'color'}
+                        onClick={() => togglePanel('color')}
+                        tooltip="Text color"
+                    >
+                        <div className="flex items-center gap-0.5" style={{ color: editor.getAttributes('textStyle').color || undefined }}>
+                            <span className="text-[14px] font-bold leading-none font-serif relative top-[1px]"
+                                style={{ backgroundColor: editor.getAttributes('highlight').color || undefined }}
+                            >A</span>
+                            <ChevronDown size={12} className="text-muted-foreground" />
+                        </div>
+                    </ToolbarButton>
+                    {activePanel === 'color' && (
+                        <div className="absolute top-[calc(100%+8px)] right-0 z-50 w-[240px]" ref={panelRef}>
+                            <div className="editor-dropdown">
+                                <ColorPicker editor={editor} onClose={() => setActivePanel('none')} />
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* More options */}
+                <div className="relative">
+                    <ToolbarButton
+                        isActive={activePanel === 'more'}
+                        onClick={() => togglePanel('more')}
+                        tooltip="More options"
+                    >
+                        <MoreHorizontal size={16} />
+                    </ToolbarButton>
+                    {activePanel === 'more' && (
+                        <div className="absolute bottom-[calc(100%+8px)] right-0 z-50 w-max" ref={panelRef}>
+                            <div className="floating-toolbar flex-nowrap" style={{ margin: 0 }}>
+                                <ToolbarButton
+                                    isActive={editor.isActive('superscript')}
+                                    onClick={() => {
+                                        editor.chain().focus().toggleSuperscript().run();
+                                    }}
+                                    tooltip="Superscript"
+                                >
+                                    <Superscript size={16} />
+                                </ToolbarButton>
+                                <ToolbarButton
+                                    isActive={editor.isActive('subscript')}
+                                    onClick={() => {
+                                        editor.chain().focus().toggleSubscript().run();
+                                    }}
+                                    tooltip="Subscript"
+                                >
+                                    <Subscript size={16} />
+                                </ToolbarButton>
+                                <div className="toolbar-divider" />
+                                <ToolbarButton
+                                    isActive={editor.isActive({ textAlign: 'left' })}
+                                    onClick={() => {
+                                        editor.chain().focus().setTextAlign('left').run();
+                                    }}
+                                    tooltip="Align left"
+                                >
+                                    <AlignLeft size={16} />
+                                </ToolbarButton>
+                                <ToolbarButton
+                                    isActive={editor.isActive({ textAlign: 'center' })}
+                                    onClick={() => {
+                                        editor.chain().focus().setTextAlign('center').run();
+                                    }}
+                                    tooltip="Align center"
+                                >
+                                    <AlignCenter size={16} />
+                                </ToolbarButton>
+                                <ToolbarButton
+                                    isActive={editor.isActive({ textAlign: 'right' })}
+                                    onClick={() => {
+                                        editor.chain().focus().setTextAlign('right').run();
+                                    }}
+                                    tooltip="Align right"
+                                >
+                                    <AlignRight size={16} />
+                                </ToolbarButton>
+                                <ToolbarButton
+                                    isActive={editor.isActive({ textAlign: 'justify' })}
+                                    onClick={() => {
+                                        editor.chain().focus().setTextAlign('justify').run();
+                                    }}
+                                    tooltip="Justify"
+                                >
+                                    <AlignJustify size={16} />
+                                </ToolbarButton>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                <div className="toolbar-divider" />
+
+                {/* Undo / Redo */}
+                <ToolbarButton
+                    onClick={() => editor.chain().focus().undo().run()}
+                    disabled={!editor.can().undo()}
+                    tooltip="Undo"
+                >
+                    <Undo size={16} />
+                </ToolbarButton>
+                <ToolbarButton
+                    onClick={() => editor.chain().focus().redo().run()}
+                    disabled={!editor.can().redo()}
+                    tooltip="Redo"
+                >
+                    <Redo size={16} />
+                </ToolbarButton>
+            </div>
         </>
     );
 });
