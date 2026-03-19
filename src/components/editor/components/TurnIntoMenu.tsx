@@ -10,6 +10,9 @@ import {
     ListChecks,
     Quote,
     Code,
+    Video,
+    ListCollapse,
+    Sigma
 } from 'lucide-react';
 
 interface TurnIntoMenuProps {
@@ -27,6 +30,9 @@ const BLOCK_TYPES = [
     { id: 'taskList', label: 'To-do list', icon: ListChecks, iconLabel: null },
     { id: 'blockquote', label: 'Blockquote', icon: Quote, iconLabel: null },
     { id: 'codeBlock', label: 'Code block', icon: Code, iconLabel: null },
+    { id: 'toggle', label: 'Toggle list', icon: ListCollapse, iconLabel: null },
+    { id: 'math', label: 'Math Equation', icon: Sigma, iconLabel: null },
+    { id: 'youtube', label: 'YouTube Video', icon: Video, iconLabel: null },
 ];
 
 function getCurrentBlockType(editor: Editor): string {
@@ -38,6 +44,9 @@ function getCurrentBlockType(editor: Editor): string {
     if (editor.isActive('taskList')) return 'taskList';
     if (editor.isActive('blockquote')) return 'blockquote';
     if (editor.isActive('codeBlock')) return 'codeBlock';
+    if (editor.isActive('toggleBlock')) return 'toggle';
+    if (editor.isActive('math')) return 'math';
+    if (editor.isActive('youtube')) return 'youtube';
     return 'paragraph';
 }
 
@@ -80,6 +89,19 @@ export const TurnIntoMenu: React.FC<TurnIntoMenuProps> = ({ editor, onClose }) =
             case 'codeBlock':
                 chain.clearNodes().toggleCodeBlock().run();
                 break;
+            case 'toggle':
+                editor.chain().focus().setDetails().run();
+                break;
+            case 'math':
+                editor.chain().focus().insertContent({ type: 'inlineMath' }).run();
+                break;
+            case 'youtube': {
+                const url = window.prompt('Enter YouTube URL:');
+                if (url) {
+                    editor.commands.setYoutubeVideo({ src: url });
+                }
+                break;
+            }
         }
 
         onClose();

@@ -15,6 +15,12 @@ import {
     AtSign,
     Smile,
     ListTree,
+    Paperclip,
+    Video,
+    ListCollapse,
+    Sigma,
+    MapPin,
+    Twitter,
 } from 'lucide-react';
 import { Editor } from '@tiptap/react';
 import { SlashCommandPluginKey } from '../extensions/SlashCommand';
@@ -97,6 +103,88 @@ const SLASH_ITEMS: SlashItem[] = [
         description: 'Upload or embed with a link.',
         icon: <ImageIcon className="w-5 h-5 text-muted-foreground group-hover:text-foreground transition-colors" />,
         command: (editor) => editor.chain().focus().setPlaceholderImage().run(), // Uses our custom ResizableImage command
+    },
+    {
+        id: 'file',
+        label: 'File',
+        description: 'Upload a file attachment.',
+        icon: <Paperclip className="w-5 h-5 text-muted-foreground group-hover:text-foreground transition-colors" />,
+        command: (editor) => editor.chain().focus().setPlaceholderFile().run(), // Uses our custom FileAttachment command
+    },
+    {
+        id: 'video',
+        label: 'YouTube Video',
+        description: 'Embed a YouTube video.',
+        icon: <Video className="w-5 h-5 text-muted-foreground group-hover:text-foreground transition-colors" />,
+        command: (editor) => {
+            let url = window.prompt('Enter YouTube URL or paste Embed code:');
+            if (url) {
+                if (url.includes('<iframe') && url.match(/src="([^"]+)"/)) {
+                    url = url.match(/src="([^"]+)"/)?.[1] || url;
+                }
+                const videoIdMatch = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+                if (videoIdMatch && videoIdMatch[1]) {
+                    const embedUrl = `https://www.youtube.com/embed/${videoIdMatch[1]}`;
+                    editor.commands.setIframeEmbed({ src: embedUrl, title: 'YouTube Video', type: 'youtube' });
+                } else {
+                    alert('Please enter a valid YouTube URL');
+                }
+            }
+        },
+    },
+    {
+        id: 'twitter',
+        label: 'Twitter / X Post',
+        description: 'Embed a tweet or X post.',
+        icon: <Twitter className="w-5 h-5 text-muted-foreground group-hover:text-foreground transition-colors" />,
+        command: (editor) => {
+            const url = window.prompt('Enter Twitter/X post URL (e.g. https://twitter.com/user/status/123):');
+            if (url) {
+                // Use the Twitter publish embed endpoint
+                const embedSrc = `https://platform.twitter.com/embed/Tweet.html?id=${url.split('/').pop()}&theme=dark`;
+                editor.commands.setIframeEmbed({ src: embedSrc, title: 'Twitter Post', type: 'twitter' });
+            }
+        },
+    },
+    {
+        id: 'map',
+        label: 'Google Map',
+        description: 'Embed a Google Maps location.',
+        icon: <MapPin className="w-5 h-5 text-muted-foreground group-hover:text-foreground transition-colors" />,
+        command: (editor) => {
+            let url = window.prompt('Enter Google Maps embed URL, share link, or paste Embed code:');
+            if (url) {
+                if (url.includes('<iframe') && url.match(/src="([^"]+)"/)) {
+                    url = url.match(/src="([^"]+)"/)?.[1] || url;
+                }
+                let embedSrc = url;
+                // Convert share links to embed links if needed
+                if (url.includes('google.com/maps') && !url.includes('/embed')) {
+                    // Try to convert a place or @coordinates link to embed
+                    if (url.includes('/place/') || url.includes('/@')) {
+                        const match = url.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+                        if (match) {
+                            embedSrc = `https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d3000!2d${match[2]}!3d${match[1]}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sen!2sin!4v1`;
+                        }
+                    }
+                }
+                editor.commands.setIframeEmbed({ src: embedSrc, title: 'Google Map', type: 'map' });
+            }
+        },
+    },
+    {
+        id: 'toggle',
+        label: 'Toggle List',
+        description: 'Collapsible content section.',
+        icon: <ListCollapse className="w-5 h-5 text-muted-foreground group-hover:text-foreground transition-colors" />,
+        command: (editor) => editor.chain().focus().setDetails().run(),
+    },
+    {
+        id: 'math',
+        label: 'Math Equation',
+        description: 'Insert a LaTeX math block.',
+        icon: <Sigma className="w-5 h-5 text-muted-foreground group-hover:text-foreground transition-colors" />,
+        command: (editor) => editor.chain().focus().insertContent({ type: 'inlineMath' }).run(),
     },
     {
         id: 'divider',
@@ -266,7 +354,7 @@ export const SlashMenu: React.FC<SlashMenuProps> = ({ editor }) => {
         }
     }, [selectedIndex, active]);
 
-    if (!active || filteredItems.length === 0) return null;
+    if (!active) return null;
 
     return (
         <div
@@ -277,25 +365,31 @@ export const SlashMenu: React.FC<SlashMenuProps> = ({ editor }) => {
                 left: position.left,
             }}
         >
-            {filteredItems.map((item, index) => (
-                <button type="button"
-                    key={item.id}
-                    className={`slash-item ${index === selectedIndex ? 'selected' : ''}`}
-                    onMouseDown={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        selectItem(item);
-                    }}
-                    onMouseEnter={() => setSelectedIndex(index)}
-                >
-                    <span className="slash-icon">{item.icon}</span>
-                    <span>
-                        <span className="slash-label">{item.label}</span>
-                        <br />
-                        <span className="slash-desc">{item.description}</span>
-                    </span>
-                </button>
-            ))}
+            {filteredItems.length === 0 ? (
+                <div className="px-3 py-4 text-center text-sm text-muted-foreground">
+                    No results
+                </div>
+            ) : (
+                filteredItems.map((item, index) => (
+                    <button type="button"
+                        key={item.id}
+                        className={`slash-item ${index === selectedIndex ? 'selected' : ''}`}
+                        onMouseDown={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            selectItem(item);
+                        }}
+                        onMouseEnter={() => setSelectedIndex(index)}
+                    >
+                        <span className="slash-icon">{item.icon}</span>
+                        <span>
+                            <span className="slash-label">{item.label}</span>
+                            <br />
+                            <span className="slash-desc">{item.description}</span>
+                        </span>
+                    </button>
+                ))
+            )}
         </div>
     );
 };

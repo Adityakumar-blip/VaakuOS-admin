@@ -131,9 +131,73 @@
   font-style: italic;
 }
 
-/* Code Block */
-.notion-editor .tiptap pre {
+/* Collapsible Toggle List */
+.notion-editor .tiptap .toggle-list {
+  display: flex;
+  align-items: flex-start;
+  gap: 2px;
+  margin: 0.2em 0;
+  padding: 4px 2px;
+  border-radius: 6px;
+  transition: background 0.1s ease;
+}
+
+.notion-editor .tiptap .toggle-list:hover {
+  background: hsl(var(--muted) / 0.5);
+}
+
+.notion-editor .tiptap .toggle-list-header {
+  flex-shrink: 0;
+  padding-top: 2px;
+}
+
+.notion-editor .tiptap .toggle-list-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  border-radius: 4px;
+  color: hsl(var(--muted-foreground));
+  transition: all 0.2s ease;
+}
+
+.notion-editor .tiptap .toggle-list-arrow:hover {
   background: hsl(var(--muted));
+  color: hsl(var(--foreground));
+}
+
+.notion-editor .tiptap .toggle-list-arrow svg {
+  transition: transform 0.2s ease;
+}
+
+.notion-editor .tiptap .toggle-list-arrow.open svg {
+  transform: rotate(90deg);
+}
+
+.notion-editor .tiptap .toggle-list-body {
+  flex: 1;
+  min-width: 0;
+}
+
+/* When collapsed (class on NodeViewWrapper), hide all children except the first one (the title) */
+.notion-editor .tiptap .toggle-closed .toggle-list-content>div>*:not(:first-child) {
+  display: none !important;
+}
+
+/* Style the first child (title) slightly bolder */
+.notion-editor .tiptap .toggle-list-content>div>*:first-child {
+  font-weight: 500;
+  margin: 0;
+}
+
+/* Code Block & Syntax Highlighting */
+.notion-editor .tiptap pre {
+  background: hsl(0 0% 9%);
+  color: hsl(0 0% 90%);
   border-radius: 8px;
   padding: 16px;
   margin: 0.6em 0;
@@ -144,10 +208,62 @@
 }
 
 .notion-editor .tiptap pre code {
-  background: transparent;
-  color: hsl(var(--foreground));
+  color: inherit;
   padding: 0;
-  font-size: inherit;
+  background: none;
+  font-size: 0.8rem;
+}
+
+.hljs-comment,
+.hljs-quote {
+  color: #616161;
+}
+
+.hljs-variable,
+.hljs-template-variable,
+.hljs-attribute,
+.hljs-tag,
+.hljs-name,
+.hljs-regexp,
+.hljs-link,
+.hljs-name,
+.hljs-selector-id,
+.hljs-selector-class {
+  color: #f98181;
+}
+
+.hljs-number,
+.hljs-meta,
+.hljs-built_in,
+.hljs-builtin-name,
+.hljs-literal,
+.hljs-type,
+.hljs-params {
+  color: #fbbc88;
+}
+
+.hljs-string,
+.hljs-symbol,
+.hljs-bullet {
+  color: #b9f18d;
+}
+
+.hljs-title,
+.hljs-section {
+  color: #faf594;
+}
+
+.hljs-keyword,
+.hljs-selector-tag {
+  color: #70cff8;
+}
+
+.hljs-emphasis {
+  font-style: italic;
+}
+
+.hljs-strong {
+  font-weight: 700;
 }
 
 /* Inline Code */
@@ -203,6 +319,9 @@
 .floating-toolbar {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
+  max-width: 500px;
+  justify-content: center;
   gap: 2px;
   padding: 4px;
   background: hsl(var(--popover));
@@ -832,4 +951,28 @@
 
 .tiptap p {
   margin: 0;
+}
+
+/* --- Iframe Embeds (Twitter, Maps, etc.) --- */
+.tiptap .iframe-embed {
+  position: relative;
+  width: 100%;
+  margin: 1rem 0;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid hsl(var(--border) / 0.4);
+  background: hsl(var(--muted) / 0.2);
+}
+
+.tiptap .iframe-embed iframe {
+  display: block;
+  width: 100%;
+  min-height: 350px;
+  border: none;
+  border-radius: 8px;
+}
+
+.tiptap .iframe-embed.ProseMirror-selectednode {
+  outline: 2px solid hsl(var(--primary));
+  outline-offset: 2px;
 }

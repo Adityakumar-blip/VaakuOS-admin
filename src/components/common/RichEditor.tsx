@@ -8,6 +8,7 @@ import { TextStyle } from '@tiptap/extension-text-style';
 import { TableOfContentsNode } from '../editor/extensions/TableOfContentsNode';
 import Color from '@tiptap/extension-color';
 import Highlight from '@tiptap/extension-highlight';
+import Youtube from '@tiptap/extension-youtube';
 import TaskList from '@tiptap/extension-task-list';
 import TaskItem from '@tiptap/extension-task-item';
 import CharacterCount from '@tiptap/extension-character-count';
@@ -25,6 +26,12 @@ import { ListItem } from '@tiptap/extension-list-item';
 import { PluginKey } from 'prosemirror-state';
 import { Extension } from '@tiptap/core';
 import Suggestion from '@tiptap/suggestion';
+import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
+import MathExtension from '@aarkue/tiptap-math-extension';
+import { all, createLowlight } from 'lowlight';
+import 'katex/dist/katex.min.css';
+
+const lowlight = createLowlight(all);
 
 import {
   Bold,
@@ -52,7 +59,13 @@ import {
   AtSign,
   Smile,
   Table as TableIcon,
-  BookOpen
+  BookOpen,
+  Paperclip,
+  Video,
+  ListCollapse,
+  Sigma,
+  MapPin,
+  Twitter
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -71,6 +84,9 @@ import { SlashMenu } from '../editor/components/SlashMenu';
 import { BlockHandle } from '../editor/components/BlockHandle';
 import { SlashCommand } from '../editor/extensions/SlashCommand';
 import { ResizableImage } from '../editor/extensions/ResizableImage';
+import { FileAttachment } from '../editor/extensions/FileAttachment';
+import { IframeEmbed } from '../editor/extensions/IframeEmbed';
+import { ToggleList } from '../editor/extensions/ToggleList';
 import { EmojiSuggestion } from '../editor/extensions/EmojiSuggestion';
 import { MentionSuggestion } from '../editor/extensions/MentionSuggestion';
 import { TableContextMenu } from '../editor/components/TableContextMenu';
@@ -223,6 +239,9 @@ const MenuBar = ({ editor }: { editor: Editor | null }) => {
         <MenuButton onClick={() => editor.chain().focus().toggleTaskList().run()} isActive={editor.isActive('taskList')} tooltip="Task List">
           <ListChecks size={18} />
         </MenuButton>
+        <MenuButton onClick={() => editor.chain().focus().setDetails().run()} isActive={editor.isActive('details')} tooltip="Toggle List">
+          <ListCollapse size={18} />
+        </MenuButton>
         <MenuButton onClick={() => editor.chain().focus().toggleBlockquote().run()} isActive={editor.isActive('blockquote')} tooltip="Blockquote">
           <Quote size={18} />
         </MenuButton>
@@ -258,13 +277,63 @@ const MenuBar = ({ editor }: { editor: Editor | null }) => {
         </Popover>
       </div>
 
-      {/* Link & Image */}
+      {/* Link, Image, File, Embeds */}
       <div className="flex items-center gap-0.5 px-2 border-r border-border h-8">
         <MenuButton onClick={setLink} isActive={editor.isActive('link')} tooltip="Add Link">
           <LinkIcon size={18} />
         </MenuButton>
         <MenuButton onClick={() => fileInputRef.current?.click()} tooltip="Upload Image">
           <ImageIcon size={18} />
+        </MenuButton>
+        <MenuButton onClick={() => editor.chain().focus().setPlaceholderFile().run()} tooltip="Attach File">
+          <Paperclip size={18} />
+        </MenuButton>
+        <MenuButton
+          onClick={() => {
+            const url = window.prompt('Enter YouTube URL:');
+            if (url) {
+              editor.commands.setYoutubeVideo({ src: url });
+            }
+          }}
+          isActive={editor.isActive('youtube')}
+          tooltip="Embed YouTube Video"
+        >
+          <Video size={18} />
+        </MenuButton>
+        <MenuButton
+          onClick={() => {
+            const url = window.prompt('Enter Twitter/X post URL (e.g. https://twitter.com/user/status/123):');
+            if (url) {
+              const embedSrc = `https://platform.twitter.com/embed/Tweet.html?id=${url.split('/').pop()}&theme=dark`;
+              editor.commands.setIframeEmbed({ src: embedSrc, title: 'Twitter Post', type: 'twitter' });
+            }
+          }}
+          tooltip="Embed Twitter / X Post"
+        >
+          <Twitter size={18} />
+        </MenuButton>
+        <MenuButton
+          onClick={() => {
+            let url = window.prompt('Enter Google Maps embed URL, share link, or paste Embed code:');
+            if (url) {
+              if (url.includes('<iframe') && url.match(/src="([^"]+)"/)) {
+                url = url.match(/src="([^"]+)"/)?.[1] || url;
+              }
+              let embedSrc = url;
+              if (url.includes('google.com/maps') && !url.includes('/embed')) {
+                if (url.includes('/place/') || url.includes('/@')) {
+                  const match = url.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+                  if (match) {
+                    embedSrc = `https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d3000!2d${match[2]}!3d${match[1]}!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sen!2sin!4v1`;
+                  }
+                }
+              }
+              editor.commands.setIframeEmbed({ src: embedSrc, title: 'Google Map', type: 'map' });
+            }
+          }}
+          tooltip="Embed Google Map"
+        >
+          <MapPin size={18} />
         </MenuButton>
         <input
           type="file"
@@ -322,10 +391,18 @@ export const RichEditor = memo(({ value, onChange, placeholder, className, aiEna
             // Needed for Table of Contents
           },
         },
+        codeBlock: false, // Disable default to use lowlight
         // Disable extensions that are explicitly added below to avoid duplicates
         bulletList: false,
         orderedList: false,
         listItem: false,
+      }),
+      CodeBlockLowlight.configure({
+        lowlight,
+        defaultLanguage: 'plaintext',
+        HTMLAttributes: {
+          class: 'code-block',
+        },
       }),
       Mention.configure({
         HTMLAttributes: {
@@ -396,6 +473,9 @@ export const RichEditor = memo(({ value, onChange, placeholder, className, aiEna
           class: 'border-r border-border/50 bg-muted/50 p-3 text-left font-semibold text-foreground align-top',
         },
       }),
+      IframeEmbed,
+      ToggleList,
+      FileAttachment,
       TableCell.extend({
         addAttributes() {
           return {
@@ -476,6 +556,9 @@ export const RichEditor = memo(({ value, onChange, placeholder, className, aiEna
       CharacterCount,
       TableGrips,
       TableOfContentsNode,
+      MathExtension.configure({
+        evaluation: false, // Turn off automatic equation evaluation
+      }),
       AiAutocomplete.configure({
         debounceTime: 600,
         enabled: aiEnabled,
@@ -539,6 +622,14 @@ export const RichEditor = memo(({ value, onChange, placeholder, className, aiEna
                 editor.chain().focus().deleteRange(range).insertContent({ type: 'tableOfContents' }).run();
               },
             },
+            {
+              title: 'Math Equation',
+              description: 'Insert a LaTeX math block.',
+              icon: Sigma,
+              command: ({ editor, range }) => {
+                editor.chain().focus().deleteRange(range).insertContent({ type: 'inlineMath' }).run();
+              },
+            },
           ],
         },
       }),
@@ -556,6 +647,11 @@ export const RichEditor = memo(({ value, onChange, placeholder, className, aiEna
           'prose prose-sm dark:prose-invert max-w-none focus:outline-none min-h-[300px] p-6 text-foreground bg-background leading-relaxed',
           className
         ),
+      },
+      transformPastedHTML(html) {
+        // Strip out dark text colors often pasted from white-background editors (Notion, Google Docs, Word)
+        // If we don't, the text will be invisible when the user switches to Dark Mode.
+        return html.replace(/color:\s*(rgb\(\s*[0-6]?[0-9]\s*,\s*[0-6]?[0-9]\s*,\s*[0-6]?[0-9]\s*\)|#000000|#111111|#222222|#333333|#000|#111|#222|#333);?/gi, '');
       },
       handleDrop: (view, event) => {
         // Handle image drop
@@ -671,13 +767,15 @@ export const RichEditor = memo(({ value, onChange, placeholder, className, aiEna
       </div>
 
       {/* Footer */}
-      <div className="editor-footer">
-        <span className="char-count" style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+      <div className="editor-footer flex items-center justify-between mt-2 pt-2 border-t border-border/40 text-xs text-muted-foreground/60 w-full">
+        <span className="uppercase tracking-widest text-[10px] font-semibold">
           Rich Text Editor
         </span>
         {editor && (
-          <span className="char-count">
-            {characterCount} characters
+          <span className="flex items-center gap-2">
+            <span>{editor.storage.characterCount.words()} words</span>
+            <span>·</span>
+            <span>{characterCount} characters</span>
           </span>
         )}
       </div>

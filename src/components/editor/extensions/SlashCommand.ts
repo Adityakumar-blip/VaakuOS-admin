@@ -30,11 +30,12 @@ export const SlashCommand = Extension.create({
 
             if (!prev.active) return prev;
 
-            // If the document changed while slash is active, update range
-            if (tr.docChanged) {
-              const { pos: from } = tr.mapping.mapResult(prev.range!.from);
-              const $from = tr.doc.resolve(from);
-              const textBefore = $from.parent.textContent.slice(0, $from.parentOffset);
+            // If the selection changed or document changed while slash is active, update the query
+            if (tr.docChanged || tr.selectionSet) {
+              // Use the NEW document's selection to find the cursor position
+              const headPos = tr.selection?.head ?? (tr.steps.length > 0 ? tr.mapping.map(prev.range!.to) : prev.range!.to);
+              const $head = tr.doc.resolve(headPos);
+              const textBefore = $head.parent.textContent.slice(0, $head.parentOffset);
               const slashIndex = textBefore.lastIndexOf('/');
 
               if (slashIndex === -1) {
@@ -42,9 +43,15 @@ export const SlashCommand = Extension.create({
               }
 
               const query = textBefore.slice(slashIndex + 1);
+
+              // Close the menu if the user types a space (they're done searching)
+              if (query.includes(' ')) {
+                return { active: false, range: null, query: '' };
+              }
+
               return {
                 active: true,
-                range: { from: $from.start() + slashIndex, to: $from.pos },
+                range: { from: $head.start() + slashIndex, to: $head.pos },
                 query,
               };
             }

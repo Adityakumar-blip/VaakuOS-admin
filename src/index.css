@@ -8,15 +8,18 @@
        BRAND CONFIGURAION (SCALABLE ARCHITECTURE)
        Change these values to update the brand identity globally.
     ------------------------------------------------------------ */
-    --brand-primary: 152 39% 27%;      /* Deep Green */
-    --brand-primary-fg: 0 0% 100%;     /* White text on green */
-    
-    --brand-secondary: 14 85% 54%;     /* Orange Accent */
+    --brand-primary: 152 39% 27%;
+    /* Deep Green */
+    --brand-primary-fg: 0 0% 100%;
+    /* White text on green */
+
+    --brand-secondary: 14 85% 54%;
+    /* Orange Accent */
 
     /* ------------------------------------------------------------
        FONTS
     ------------------------------------------------------------ */
-       --font-sans: "General Sans", system-ui, sans-serif;
+    --font-sans: "General Sans", system-ui, sans-serif;
     --font-mono: "JetBrains Mono", monospace;
 
     /* ------------------------------------------------------------
@@ -34,11 +37,12 @@
     /* ------------------------------------------------------------
        SEMANTIC UI COLORS
     ------------------------------------------------------------ */
-    
+
     /* Primary - Mapped to Brand Color */
     --primary: var(--brand-primary);
     --primary-foreground: var(--brand-primary-fg);
-    --primary-hover: 152 39% 22%; /* Slightly darker for hover */
+    --primary-hover: 152 39% 22%;
+    /* Slightly darker for hover */
 
     /* Secondary - Light Neutral (for minimal look) */
     --secondary: 240 4.8% 95.9%;
@@ -66,7 +70,7 @@
     /* Borders & Inputs */
     --border: 240 5.9% 90%;
     --input: 240 5.9% 90%;
-    
+
     /* Ring - Use Brand Color for focus rings */
     --ring: var(--brand-primary);
 
@@ -75,7 +79,7 @@
     /* ------------------------------------------------------------
        SIDEBAR (Light - Minimal)
     ------------------------------------------------------------ */
-    --sidebar-background: 240 4.8% 98.5%; 
+    --sidebar-background: 240 4.8% 98.5%;
     --sidebar-foreground: 240 5.9% 20%;
     --sidebar-primary: var(--brand-primary);
     --sidebar-primary-foreground: var(--brand-primary-fg);
@@ -104,13 +108,20 @@
     /* ------------------------------------------------------------
        TYPOGRAPHY (Subtle & Precise)
     ------------------------------------------------------------ */
-    --fs-h1: 1.5rem;       /* 24px - Subtle leading title */
-    --fs-h2: 1.25rem;      /* 20px - Secondary title */
-    --fs-h3: 1.125rem;     /* 18px - Section header */
-    --fs-h4: 1rem;         /* 16px - Large text/Sub-header */
-    --fs-p: 0.8125rem;     /* 13px - Ultra-clean body text */
-    --fs-p-lg: 0.875rem;   /* 14px - Standard body text */
-    --fs-small: 0.75rem;   /* 12px - Labels and captions */
+    --fs-h1: 1.5rem;
+    /* 24px - Subtle leading title */
+    --fs-h2: 1.25rem;
+    /* 20px - Secondary title */
+    --fs-h3: 1.125rem;
+    /* 18px - Section header */
+    --fs-h4: 1rem;
+    /* 16px - Large text/Sub-header */
+    --fs-p: 0.8125rem;
+    /* 13px - Ultra-clean body text */
+    --fs-p-lg: 0.875rem;
+    /* 14px - Standard body text */
+    --fs-small: 0.75rem;
+    /* 12px - Labels and captions */
   }
 
   /* ============================================================
@@ -118,7 +129,7 @@
   ============================================================ */
   .dark {
     /* Brand Colors in Dark Mode */
-    --brand-primary: 152 39% 27%; 
+    --brand-primary: 152 39% 27%;
     --primary-hover: 152 39% 32%;
 
     --background: 240 10% 3.9%;
@@ -174,14 +185,16 @@
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-sans);
     font-size: var(--fs-p-lg);
     line-height: 1.5;
   }
+
   html {
-     /* Improves scrolling experience */
+    /* Improves scrolling experience */
     scroll-behavior: smooth;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -192,13 +205,15 @@
     width: 4px;
     height: 4px;
   }
+
   ::-webkit-scrollbar-track {
     background: transparent;
   }
+
   ::-webkit-scrollbar-thumb {
     @apply bg-muted-foreground/10 rounded-full hover:bg-muted-foreground/30;
   }
-  
+
   /* Selection text color - matches brand */
   ::selection {
     @apply bg-primary/20 text-primary;
@@ -227,15 +242,39 @@
   .stealth-scroll:hover::-webkit-scrollbar-thumb {
     @apply bg-muted-foreground/20;
   }
-  
+
   /* Make headings feel more precise and subtle */
-  h1 { font-size: var(--fs-h1); @apply tracking-tight font-semibold leading-tight; }
-  h2 { font-size: var(--fs-h2); @apply tracking-tight font-semibold leading-snug; }
-  h3 { font-size: var(--fs-h3); @apply tracking-tight font-semibold leading-normal; }
-  h4 { font-size: var(--fs-h4); @apply tracking-tight font-semibold leading-normal; }
-  p { font-size: var(--fs-p); @apply leading-relaxed text-muted-foreground/90; }
-  
-  h1, h2, h3, h4, h5, h6 {
+  h1 {
+    font-size: var(--fs-h1);
+    @apply tracking-tight font-semibold leading-tight;
+  }
+
+  h2 {
+    font-size: var(--fs-h2);
+    @apply tracking-tight font-semibold leading-snug;
+  }
+
+  h3 {
+    font-size: var(--fs-h3);
+    @apply tracking-tight font-semibold leading-normal;
+  }
+
+  h4 {
+    font-size: var(--fs-h4);
+    @apply tracking-tight font-semibold leading-normal;
+  }
+
+  p {
+    font-size: var(--fs-p);
+    @apply leading-relaxed text-muted-foreground/90;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
     @apply text-foreground;
   }
 
@@ -243,6 +282,7 @@
   .hover-lift {
     @apply transition-transform duration-300 ease-out;
   }
+
   .hover-lift:hover {
     @apply -translate-y-0.5;
   }
@@ -254,6 +294,16 @@
   /* Tiptap Editor Styles */
   .ProseMirror {
     outline: none;
+  }
+
+  /* Fix for dark text pasted from other apps (like Notion/Word) becoming invisible in dark mode */
+  .dark .ProseMirror [style*="color: rgb(0, 0, 0)"],
+  .dark .ProseMirror [style*="color: rgb(55, 53, 47)"],
+  .dark .ProseMirror [style*="color: #000"],
+  .dark .ProseMirror [style*="color: #111"],
+  .dark .ProseMirror [style*="color: #222"],
+  .dark .ProseMirror [style*="color: #333"] {
+    color: inherit !important;
   }
 
   .ProseMirror p.is-editor-empty:first-child::before {
@@ -278,7 +328,7 @@
     margin: 2rem 0;
   }
 
-  .ProseMirror ul, 
+  .ProseMirror ul,
   .ProseMirror ol {
     padding-left: 1.5rem;
     margin: 1rem 0;
@@ -292,10 +342,18 @@
     list-style-type: decimal;
   }
 
-  .ProseMirror h1 { @apply text-2xl font-bold mb-4 mt-6 text-foreground; }
-  .ProseMirror h2 { @apply text-xl font-bold mb-3 mt-5 text-foreground; }
-  .ProseMirror h3 { @apply text-lg font-bold mb-2 mt-4 text-foreground; }
-  
+  .ProseMirror h1 {
+    @apply text-2xl font-bold mb-4 mt-6 text-foreground;
+  }
+
+  .ProseMirror h2 {
+    @apply text-xl font-bold mb-3 mt-5 text-foreground;
+  }
+
+  .ProseMirror h3 {
+    @apply text-lg font-bold mb-2 mt-4 text-foreground;
+  }
+
   .ProseMirror code {
     @apply bg-muted px-1.5 py-0.5 rounded-md font-mono text-sm text-primary;
   }
@@ -322,15 +380,37 @@
 
   /* Stretch Animations for Elastic Scroll */
   @keyframes stretch-top {
-    0% { transform: translateY(0) scaleY(1); transform-origin: top; }
-    50% { transform: translateY(10px) scaleY(1.02); transform-origin: top; }
-    100% { transform: translateY(0) scaleY(1); transform-origin: top; }
+    0% {
+      transform: translateY(0) scaleY(1);
+      transform-origin: top;
+    }
+
+    50% {
+      transform: translateY(10px) scaleY(1.02);
+      transform-origin: top;
+    }
+
+    100% {
+      transform: translateY(0) scaleY(1);
+      transform-origin: top;
+    }
   }
 
   @keyframes stretch-bottom {
-    0% { transform: translateY(0) scaleY(1); transform-origin: bottom; }
-    50% { transform: translateY(-10px) scaleY(1.02); transform-origin: bottom; }
-    100% { transform: translateY(0) scaleY(1); transform-origin: bottom; }
+    0% {
+      transform: translateY(0) scaleY(1);
+      transform-origin: bottom;
+    }
+
+    50% {
+      transform: translateY(-10px) scaleY(1.02);
+      transform-origin: bottom;
+    }
+
+    100% {
+      transform: translateY(0) scaleY(1);
+      transform-origin: bottom;
+    }
   }
 
   /* Global Fix for Jittery Text during Transformations */
